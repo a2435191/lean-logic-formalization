@@ -1,0 +1,16 @@
+name = "logic-formalization"
+version = "0.1.0"
+keywords = ["math"]
+defaultTargets = ["LogicFormalization"]
+
+[leanOptions]
+pp.unicode.fun = false # pretty-prints `fun a ↦ b`
+autoImplicit = false
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+version = "git#v4.18.0"
+
+[[lean_lib]]
+name = "LogicFormalization"
