@@ -7,10 +7,11 @@ The textbook treats propositions, terms, formulas, sentences, etc. as "admissibl
 **Everyone is welcome to contribute. I am still learning Lean, so if there is something that I'm not doing correctly, please speak up!**
 
 ## Remaining work:
-- [ ] Improve the `p![⬝]` syntax to automatically bring variables into scope. Maybe rename it to `P!`, too
+- [ ] Finish some lemmas in 2.1
 - [ ] Homeworks for 2.1, especially the conjunctive/disjunctive normal form problems, which we will need later. Those results specifically will go in [NormalForms](LogicFormalization/Chapter2/Section1/NormalForms.lean)
 - [ ] Isomorphism between admissible words and the inductive definition of `Prop'`. Low priority
 - [ ] Proof of correctness for parsing admissible words (low priority as it's not in the textbook). See [DecidableReading](LogicFormalization/Chapter2/Section1/DecidableReading.lean)
+- [ ] Improve the `p![⬝]` syntax to automatically bring variables into scope. Maybe rename it to `P!`, too
 - [ ] Homeworks for 2.2, which are applications of compactness.
 - [ ] The graph coloring example at the end of 2.2 is another application of compactness. It should go in [Coloring](LogicFormalization/Chapter2/Section2/Coloring.lean)
 - [ ] All of 2.3 except for the basic definitions. We will probably want custom macros so that we can e.g. define an enum `LOAb` with `plus`, `neg`, `zero`, `lt` and have respective syntaxes `+`, `-`, `0`, `<` automatically defined.
