@@ -16,6 +16,19 @@ namespace Prop'
 
 variable {A: Type u}
 
+-- TODO: maybe put this somewhere else?
+-- also TODO: replace with a proper delaborator at some point
+instance [ToString A]: ToString (Prop' A) where
+  toString := go
+  where go -- prefix notation
+    | .atom a => toString a
+    | .true => "⊤"
+    | .false => "⊥"
+    | .not p => s!"¬{go p}"
+    | .or p q => s!"∨{go p}{go q}"
+    | .and p q => s!"∧{go p}{go q}"
+
+
 @[reducible]
 def length: Prop' A → ℕ
 | .atom _ | .true | .false => 1

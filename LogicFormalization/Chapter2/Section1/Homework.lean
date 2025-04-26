@@ -2,24 +2,14 @@ import LogicFormalization.Chapter2.Section1.NormalForms
 import Mathlib.Data.Fintype.Defs
 import Mathlib.Data.Fintype.Card
 
-namespace Prop'
+namespace Homeworks
 
 universe u
 variable {A: Type u}
 
-section Problem1
+open Prop'
 
-theorem disjunctive_normal_form: ∀ p: Prop' A, ∃ ps, p = disj ps ∧ ∀ p' ∈ ps, ∃ as, p' = conj as ∧ ∀ a ∈ as, a.isLiteral :=
-  sorry
-
-end Problem1
-
-section Problem2
-
-theorem conjunctive_normal_form: ∀ p: Prop' A, ∃ ps, p = conj ps ∧ ∀ p' ∈ ps, ∃ as, p' = disj as ∧ ∀ a ∈ as, a.isLiteral :=
-  sorry
-
-end Problem2
+/-! Problems 1 and 2 can be found in NormalForms.lean. -/
 
 section Problem3
 
@@ -49,4 +39,4 @@ end Problem4
 
 -- TODO: Problem 5
 
-end Prop'
+end Homeworks
