@@ -8,7 +8,8 @@ The textbook treats propositions, terms, formulas, sentences, etc. as "admissibl
 
 ## Remaining work:
 - [ ] Finish some lemmas in 2.1
-- [ ] Homeworks for 2.1, especially the conjunctive/disjunctive normal form problems, which we will need later. Those results specifically will go in [NormalForms](LogicFormalization/Chapter2/Section1/NormalForms.lean)
+- [ ] Homeworks for 2.1,
+- [x] ~especially the conjunctive/disjunctive normal form problems, which we will need later. Those results specifically will go in [NormalForms](LogicFormalization/Chapter2/Section1/NormalForms.lean)~
 - [ ] Isomorphism between admissible words and the inductive definition of `Prop'`. Low priority
 - [ ] Proof of correctness for parsing admissible words (low priority as it's not in the textbook). See [DecidableReading](LogicFormalization/Chapter2/Section1/DecidableReading.lean)
 - [ ] Improve the `p![⬝]` syntax to automatically bring variables into scope. Maybe rename it to `P!`, too
