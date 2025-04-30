@@ -169,10 +169,10 @@ lemma truth_conj_map_disj: truth t (conj (l.map disj)) = decide (∀ c ∈ l, �
   simp only [Function.comp_apply, truth_disj, List.any_eq_true]
 end
 
-def truth_disjNF'_eq: truth t (disjNF' p) = decide (∃ c ∈ disjNF p, ∀ l ∈ c, truth t l) := by
+lemma truth_disjNF'_eq: truth t (disjNF' p) = decide (∃ c ∈ disjNF p, ∀ l ∈ c, truth t l) := by
   simp only [disjNF', truth_disj_map_conj, List.exists_of_mem_map', List.forall_mem_unattach]
 
-def truth_conjNF'_eq: truth t (conjNF' p) = decide (∀ d ∈ conjNF p, ∃ l ∈ d, truth t l) := by
+lemma truth_conjNF'_eq: truth t (conjNF' p) = decide (∀ d ∈ conjNF p, ∃ l ∈ d, truth t l) := by
   simp only [conjNF', truth_conj_map_disj, List.forall_of_mem_map', List.exists_mem_unattach]
 
 mutual
