@@ -1,6 +1,7 @@
 import LogicFormalization.Chapter2.Section1.Notation
 import Mathlib.Data.Set.Insert
 import Mathlib.Data.List.Basic
+import Mathlib.Data.Fintype.EquivFin
 
 -- set_option autoImplicit true
 
@@ -306,3 +307,22 @@ lemma truth_conj_or_conj: truth t (or (conj ps) (conj qs)) = ((ps.product qs).al
     push_neg at hn
     have ⟨⟨x, hx₁, hx₂⟩, ⟨y, hy₁, hy₂⟩⟩ := hn
     apply (h x y hx₁ hy₁).elim <;> assumption
+
+section Infinite
+
+@[reducible]
+def instInfiniteProp'.f : ℕ → Prop' A
+| 0 => ⊤
+| k + 1 => not (f k)
+
+instance instInfiniteProp' : Infinite (Prop' A) := by
+  apply Infinite.of_injective instInfiniteProp'.f
+  intro m n h
+  induction' m with k ih generalizing n
+  · match n with
+    | 0 => rfl
+  · match n with
+    | l + 1 =>
+      exact congr_arg _ (ih (not.inj h))
+
+end Infinite
