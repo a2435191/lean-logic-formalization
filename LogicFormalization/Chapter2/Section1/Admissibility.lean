@@ -1,5 +1,6 @@
 import LogicFormalization.Chapter1.Section2
 import LogicFormalization.Chapter2.Section1.Arity
+import Mathlib.Tactic.DefEqTransformations
 
 universe u
 
@@ -298,8 +299,8 @@ lemma occurs_in_succ (h: OccursIn v ts[j.j] ⟨j.offset, j.offset_lt⟩)
 
 end J
 
-/-- See `unique_admissible` for uniqueness -/
-lemma exists_admissible [Arity F] {w: Word F} {i: Fin w.length} (hw: Admissible w): ∃ v, Admissible v ∧ OccursIn v w i :=
+/-- See `unique_admissible_occurring_in` for uniqueness -/
+lemma exists_admissible_occurring_in [Arity F] {w: Word F} (hw: Admissible w) (i: Fin w.length): ∃ v, Admissible v ∧ OccursIn v w i :=
   match hi: i with
   | ⟨0, h0⟩ => ⟨w, hw, refl h0⟩
   | ⟨k + 1, hk⟩ =>
@@ -309,7 +310,7 @@ lemma exists_admissible [Arity F] {w: Word F} {i: Fin w.length} (hw: Admissible 
     let j := J.compute ts ⟨k, hk'⟩
     let tj := ts[j.j]
     have htj: Admissible tj := h₂ tj (List.mem_of_getElem rfl)
-    let ⟨v, hv₁, hv₂⟩ := exists_admissible (w := tj) htj (i := ⟨j.offset, j.offset_lt⟩)
+    let ⟨v, hv₁, hv₂⟩ := exists_admissible_occurring_in (w := tj) htj ⟨j.offset, j.offset_lt⟩
     ⟨v, hv₁, h₁ ▸ j.occurs_in_succ hv₂⟩
 termination_by w.length
 decreasing_by calc ts[j.j].length
@@ -318,9 +319,9 @@ decreasing_by calc ts[j.j].length
   _ < (f :: ts.flatten).length := by simp only [List.length_cons, Nat.lt_add_one]
   _ = w.length := congrArg _ h₁.symm
 
-/-- Lemma 2.1.6: `exists_admissible` is unique -/
-lemma unique_admissible [Arity F] (hw: Admissible w): ∃! v: Word F, Admissible v ∧ OccursIn v w i := by
-  have ⟨v, hv₁, hv₂⟩ := exists_admissible (i := i) hw
+/-- Lemma 2.1.6: `exists_admissible_occurring_in` is unique -/
+lemma unique_admissible_occurring_in [Arity F] (hw: Admissible w) (i: Fin w.length): ∃! v: Word F, Admissible v ∧ OccursIn v w i := by
+  have ⟨v, hv₁, hv₂⟩ := exists_admissible_occurring_in hw i
   refine ⟨v, ⟨hv₁, hv₂⟩, ?_⟩
   intro v' ⟨hv'₁, hv'₂⟩
   have ⟨x₁, x₂, h₁, h₂⟩ := hv₂
@@ -331,11 +332,27 @@ lemma unique_admissible [Arity F] (hw: Admissible w): ∃! v: Word F, Admissible
   apply eq_prefix_of_eq (u := x₂) (w := x'₂)
   <;> assumption
 
-namespace J
+variable {f: F} {ts: List (Word F)} [Arity F]
 
--- TODO: "Remark" right after Lemma 2.1.6
--- lemma occurrence_inside {f: F} {ts: List (Word F)} (hf: arity f > 0) (hts: ∀ t ∈ ts, Admissible t)
-end J
+abbrev OccurrenceInside: Prop :=
+  ∀ (f: F) (ts: List (Word F)) (hf: arity f > 0) (hts₁: ∀ t ∈ ts, Admissible t) (hts₂: ts.length = arity f),
+    let w := f :: ts.flatten
+    let l (j: Fin (ts.length + 1)) :=
+      (ts.take j).flatten.length
+    have hw: Admissible w := .concat f hf ts hts₁ hts₂
+    ∀ {i: Fin w.length} {jPred: Fin ts.length},
+      l jPred.castSucc < i → i ≤ l jPred.succ →
+        let v := (unique_admissible_occurring_in hw i).choose
+        i + v.length < l jPred.succ
+
+/-- The remark after Lemma 2.1.6 -/
+lemma occurrence_inside: OccurrenceInside (F := F) := by
+  unfold OccurrenceInside
+  intro f ts hf hts₁ hts₂ w l hw i jPred hi₁ hi₂ v
+  have ⟨⟨hv₁, hv₂⟩, hv₃⟩ := (unique_admissible_occurring_in hw i).choose_spec
+  refold_let v at hv₁ hv₂ hv₃
+
+  sorry
 
 end Lemma6
 
@@ -347,31 +364,9 @@ noncomputable def replaceIn (v w: Word F) (i: Fin w.length) (h: OccursIn v w i) 
   let w₂ := h.choose_spec.choose
   w₁ ++ v' ++ w₂
 
-/-- constructive version of `replaceIn` -/
-def replaceIn' (v w: Word F) (i: Fin w.length) (v': Word F): Word F :=
-  let w₁ := w.take i
-  let w₂ := w.drop (i + v.length)
-  w₁ ++ v' ++ w₂
-
 variable {v': Word F}
 
-@[simp]
-lemma replaceIn_eq_replaceIn' (h: OccursIn v w i)
-: replaceIn v w i h v' = replaceIn' v w i v' := by
-  let w₁l := h.choose
-  let w₂l := h.choose_spec.choose
-  let w₁r := w.take i
-  let w₂r := w.drop (i + v.length)
-  show w₁l ++ v' ++ w₂l = w₁r ++ v' ++ w₂r
-  have ⟨h₁, h₂⟩ := h.choose_spec.choose_spec
-  replace ⟨h₁, h₂⟩ := unique_prefix_and_suffix h₁ h₂
-  congr
-
 section Corollary7
-
--- TODO
--- lemma admissible_replaceIn [Arity F] {i: Fin w.length} (hw: Admissible w) {v': Word F} (hv': Admissible v')
--- : Admissible (replaceIn)
 
 end Corollary7
 
