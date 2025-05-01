@@ -67,10 +67,6 @@ lemma equivalent_trans: equivalent p q → equivalent q r → equivalent p r :=
         (truth_of_iff.mp <| h₁ t)
         (truth_of_iff.mp <| h₂ t)
 
-@[simp↓ high]
-lemma equivalent_iff: equivalent p q ↔ ∀ t, truth t p = truth t q := by
-  simp only [equivalent, tautology, truth_of_iff]
-
 instance: Equivalence (@equivalent A) where
   refl := fun _ => equivalent_refl
   symm := equivalent_symm
@@ -79,6 +75,15 @@ instance: Equivalence (@equivalent A) where
 instance: Setoid (Prop' A) where
   r := equivalent
   iseqv := instEquivalenceEquivalent
+
+/-- We prefer `equivalent p q` to `p ≈ q` -/
+@[simp←]
+lemma equivalent_def: equivalent p q ↔ p ≈ q :=
+  Eq.to_iff rfl
+
+@[simp↓ high]
+lemma equivalent_iff: equivalent p q ↔ ∀ t, truth t p = truth t q := by
+  simp only [equivalent, tautology, truth_of_iff]
 
 section Lemma2
 lemma equivalent_of_or_self: equivalent (or p p) p :=
