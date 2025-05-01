@@ -332,27 +332,6 @@ lemma unique_admissible_occurring_in [Arity F] (hw: Admissible w) (i: Fin w.leng
   apply eq_prefix_of_eq (u := x₂) (w := x'₂)
   <;> assumption
 
-variable {f: F} {ts: List (Word F)} [Arity F]
-
-abbrev OccurrenceInside: Prop :=
-  ∀ (f: F) (ts: List (Word F)) (hf: arity f > 0) (hts₁: ∀ t ∈ ts, Admissible t) (hts₂: ts.length = arity f),
-    let w := f :: ts.flatten
-    let l (j: Fin (ts.length + 1)) :=
-      (ts.take j).flatten.length
-    have hw: Admissible w := .concat f hf ts hts₁ hts₂
-    ∀ {i: Fin w.length} {jPred: Fin ts.length},
-      l jPred.castSucc < i → i ≤ l jPred.succ →
-        let v := (unique_admissible_occurring_in hw i).choose
-        i + v.length < l jPred.succ
-
-/-- The remark after Lemma 2.1.6 -/
-lemma occurrence_inside: OccurrenceInside (F := F) := by
-  unfold OccurrenceInside
-  intro f ts hf hts₁ hts₂ w l hw i jPred hi₁ hi₂ v
-  have ⟨⟨hv₁, hv₂⟩, hv₃⟩ := (unique_admissible_occurring_in hw i).choose_spec
-  refold_let v at hv₁ hv₂ hv₃
-
-  sorry
 
 end Lemma6
 
