@@ -1,6 +1,6 @@
 import Mathlib.Data.Set.Basic
 
-set_option autoImplicit true
+universe u
 
 /-! We keep the usual definitions of `Set`, functions, cardinality, products, etc. from Mathlib.
     We also use maps for families/sequences.  -/
@@ -22,6 +22,8 @@ namespace Word
 
 abbrev empty (α: outParam (Type u)): Word α :=
   []
+
+variable {α: Type u}
 
 @[reducible]
 def ε: Word α := empty α
@@ -49,5 +51,3 @@ lemma concat_cancel_right (h: a ++ c = b ++ c): a = b :=
   List.append_cancel_right h
 
 end Word
-
--- TODO: posets, least, minimal, lower bound, Zorn's lemma
