@@ -10,7 +10,7 @@ autoImplicit = false
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
-version = "git#v4.18.0"
+version = "git#v4.19.0"
 
 [[lean_lib]]
 name = "LogicFormalization"
