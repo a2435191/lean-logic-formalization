@@ -44,7 +44,7 @@ lemma length_gt_one_iff: length p > 1 ↔ (∃ q, p = not q) ∨ (∃ q r, p = o
 end Lemma1
 
 @[simp↓ high]
-lemma truth_of_implies: truth t (implies p q) ↔ (truth t p → truth t q) := by
+lemma truth_of_implies: truth t P![p → q] ↔ (truth t p → truth t q) := by
   rw [implies, truth, truth]
   cases (truth t p) <;> cases (truth t q) <;> decide
 
@@ -86,34 +86,34 @@ lemma equivalent_iff: equivalent p q ↔ ∀ t, truth t p = truth t q := by
   simp only [equivalent, tautology, truth_of_iff]
 
 section Lemma2
-lemma equivalent_of_or_self: equivalent (or p p) p :=
+lemma equivalent_of_or_self: equivalent P![p ∨ p] p :=
   fun _ => by rw [truth_of_iff, truth, Bool.or_self]
 
-lemma equivalent_of_and_self: equivalent (and p p) p :=
+lemma equivalent_of_and_self: equivalent P![p ∧ p] p :=
   fun _ => by rw [truth_of_iff, truth, Bool.and_self]
 
-lemma equivalent_of_or_symm: equivalent (or p q) (or q p) :=
+lemma equivalent_of_or_symm: equivalent P![p ∨ q] P![q ∨ p] :=
   fun _ => by rw [truth_of_iff, truth, truth, Bool.or_comm]
 
-lemma equivalent_of_and_symm: equivalent (and p q) (and q p) :=
+lemma equivalent_of_and_symm: equivalent P![p ∧ q] P![q ∧ p] :=
   fun _ => by rw [truth_of_iff, truth, truth, Bool.and_comm]
 
-lemma equivalent_of_or_assoc: equivalent (or p (or q r)) (or (or p q) r) := by
+lemma equivalent_of_or_assoc: equivalent P![p ∨ (q ∨ r)] P![(p ∨ q) ∨ r] := by
   intro
   rw [truth_of_iff]
   simp only [truth_of_iff, truth, Bool.or_assoc]
 
-lemma equivalent_of_and_assoc: equivalent (and p (and q r)) (and (and p q) r) := by
+lemma equivalent_of_and_assoc: equivalent P![p ∧ (q ∧ r)] P![(p ∧ q) ∧ r] := by
   intro
   rw [truth_of_iff]
   simp only [truth, Bool.and_assoc]
 
-lemma equivalent_of_or_and: equivalent (or p (and q r)) (and (or p q) (or p r)) := by
+lemma equivalent_of_or_and: equivalent P![p ∨ (q ∧ r)] P![(p ∨ q) ∧ (p ∨ r)] := by
   intro
   rw [truth_of_iff]
   simp only [truth, Bool.or_and_distrib_left]
 
-lemma equivalent_of_and_or: equivalent (and p (or q r)) (or (and p q) (and p r)) := by
+lemma equivalent_of_and_or: equivalent P![p ∧ (q ∨ r)] P![(p ∧ q) ∨ (p ∧ r)] := by
   intro
   rw [truth_of_iff]
   simp only [truth, Bool.and_or_distrib_left]
@@ -124,37 +124,37 @@ private lemma Bool.or_and_self {a b: Bool}: (a || (a && b)) = a := by
 private lemma Bool.and_or_self {a b: Bool}: (a && (a || b)) = a := by
   cases a <;> simp
 
-lemma equivalent_of_or_and_self: equivalent (or p (and p q)) p := by
+lemma equivalent_of_or_and_self: equivalent P![p ∨ (p ∧ q)] p := by
   intro
   rw [truth_of_iff]
   simp only [truth, Bool.or_and_self]
 
-lemma equivalent_of_and_or_self: equivalent (and p (or p q)) p := by
+lemma equivalent_of_and_or_self: equivalent P![p ∧ (p ∨ q)] p := by
   intro
   rw [truth_of_iff]
   simp only [truth, Bool.and_or_self]
 
-lemma equivalent_of_not_or: equivalent (not (or p q)) (and (not p) (not q)) := by
+lemma equivalent_of_not_or: equivalent P![¬(p ∨ q)] P![¬p ∧ ¬q] := by
   intro
   rw [truth_of_iff]
   simp only [truth, Bool.not_or]
 
-lemma equivalent_of_not_and: equivalent (not (and p q)) (or (not p) (not q)) := by
+lemma equivalent_of_not_and: equivalent P![¬(p ∧ q)] P![¬p ∨ ¬q] := by
   intro
   rw [truth_of_iff]
   simp only [truth, Bool.not_and]
 
-lemma equivalent_of_or_not_self: equivalent (or p (not p)) ⊤ := by
+lemma equivalent_of_or_not_self: equivalent P![p ∨ ¬p] ⊤ := by
   intro
   rw [truth_of_iff]
   simp only [truth, Bool.or_not_self]
 
-lemma equivalent_of_and_not_self: equivalent (and p (not p)) ⊥ := by
+lemma equivalent_of_and_not_self: equivalent P![p ∧ ¬p] ⊥ := by
   intro
   rw [truth_of_iff]
   simp only [truth, Bool.and_not_self]
 
-lemma equivalent_of_not_not: equivalent (not (not p)) p := by
+lemma equivalent_of_not_not: equivalent P![¬¬p] p := by
   intro
   rw [truth_of_iff]
   simp only [truth, Bool.not_not]
@@ -213,7 +213,7 @@ lemma tautologicalConsequence_or: S ⊨ p ∨ S ⊨ q → S ⊨ or p q := by
   all_goals
     simp only [truth, h t ht, Bool.true_or, Bool.or_true]
 
-lemma tautologicalConsequence_of_union: S ∪ {p} ⊨ q ↔ S ⊨ implies p q := by
+lemma tautologicalConsequence_of_union: S ∪ {p} ⊨ q ↔ S ⊨ P![p → q] := by
   constructor
   · intro h t ht
     apply truth_of_implies.mpr
@@ -229,7 +229,7 @@ lemma tautologicalConsequence_of_union: S ∪ {p} ⊨ q ↔ S ⊨ implies p q :=
     · apply right_models_of_union ht
       rfl
 
-lemma tautologicalConsequence_mp: S ⊨ p → S ⊨ implies p q → S ⊨ q :=
+lemma tautologicalConsequence_mp: S ⊨ p → S ⊨ P![p → q] → S ⊨ q :=
   fun hp hpq t ht => truth_of_implies.mp (hpq t ht) (hp t ht)
 
 end Lemma3
@@ -296,12 +296,12 @@ lemma truth_conj_append: truth t (conj (ps ++ qs)) = (ps.all (truth t) && qs.all
 lemma truth_conj_append': truth t (conj (ps ++ qs)) = (truth t (conj ps) && truth t (conj qs)) := by
   simp only [truth_conj, List.all_append]
 
-lemma truth_disj_and_disj: truth t (and (disj ps) (disj qs)) = ((ps.product qs).any fun (p, q) => truth t (and p q)) := by
+lemma truth_disj_and_disj: truth t P![{disj ps} ∧ {disj qs}] = ((ps.product qs).any fun (p, q) => truth t (and p q)) := by
   simp only [truth, truth_disj, List.any_eq, ←Bool.decide_and, Bool.and_eq_true, Prod.exists,
     List.pair_mem_product, decide_eq_decide]
   tauto
 
-lemma truth_conj_or_conj: truth t (or (conj ps) (conj qs)) = ((ps.product qs).all fun (p, q) => truth t (or p q)) := by
+lemma truth_conj_or_conj: truth t P![{conj ps} ∨ {conj qs}] = ((ps.product qs).all fun (p, q) => truth t (or p q)) := by
   simp only [truth, truth_conj, List.all_eq, ←Bool.decide_or, Bool.or_eq_true, Prod.forall,
     List.pair_mem_product, and_imp, decide_eq_decide]
   constructor

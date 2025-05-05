@@ -100,7 +100,7 @@ def conjNF' (p: Prop' A): Prop' A :=
 
 open Notation in
 #eval do
-  let p := p![(¬@'a' ∨@'b') ∧ ¬@'c' ∧ ⊤]
+  let p := P![(¬@'a' ∨ @'b') ∧ ¬@'c' ∧ ⊤]
   println! p
   println! (disjNF p, disjNF' p)
   println! (conjNF p, conjNF' p)

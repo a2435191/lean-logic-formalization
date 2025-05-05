@@ -25,23 +25,23 @@ lemma em: ⊨ or p (not p) := by
   intro
   simp only [truth, Bool.or_not_self]
 
-lemma inl: ⊨ p![↑p → ↑p ∨ ↑q] := by tauto2
-lemma inr: ⊨ p![↑p → ↑q ∨ ↑p] := by tauto2
+lemma inl: ⊨ P![p → p ∨ q] := by tauto2
+lemma inr: ⊨ P![p → q ∨ p] := by tauto2
 
-lemma not_or_intro: ⊨ p![¬↑p → ¬↑q → ¬(↑p ∨ ↑q)] := by tauto2
+lemma not_or_intro: ⊨ P![¬p → ¬q → ¬(p ∨ q)] := by tauto2
 
-lemma left: ⊨ p![↑p ∧ ↑q → ↑p] := by tauto2
-lemma right: ⊨ p![↑p ∧ ↑q → ↑q] := by tauto2
+lemma left: ⊨ P![p ∧ q → p] := by tauto2
+lemma right: ⊨ P![p ∧ q → q] := by tauto2
 
-lemma and: ⊨ p![↑p → ↑q → ↑p ∧ ↑q] := by tauto2
+lemma and: ⊨ P![p → q → p ∧ q] := by tauto2
 
-lemma split: ⊨ p![(↑p → ↑q → ↑r) → (↑p → ↑q) → ↑p → ↑r] := by tauto3
+lemma split: ⊨ P![(p → q → r) → (p → q) → p → r] := by tauto3
 
-lemma absurd: ⊨ p![↑p → ¬↑p → ⊥] := by
+lemma absurd: ⊨ P![p → ¬p → ⊥] := by
   intro t
   simp only [truth, Bool.not_not, Bool.or_false, Bool.not_or_self]
 
-lemma contra: ⊨ p![(¬↑p → ⊥) → ↑p] := by
+lemma contra: ⊨ P![(¬p → ⊥) → p] := by
   intro t
   simp only [truth, Bool.not_not, Bool.or_false, Bool.not_or_self]
 

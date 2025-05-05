@@ -3,7 +3,6 @@
 Homework solutions should go in the `Homework.lean` file of their respective chapter and section.
 
 ## High priority
-- [ ] Improve the `p![⬝]` syntax to automatically bring variables into scope. Maybe rename it to `P!`, too
 - [ ] All of 2.3 except for the basic definitions. We will probably want custom macros so that we can e.g. define an enum `LOAb` with `plus`, `neg`, `zero`, `lt` and have respective syntaxes `+`, `-`, `0`, `<` automatically defined.
 - [ ] All of 2.4 onwards
 
@@ -20,3 +19,4 @@ Homework solutions should go in the `Homework.lean` file of their respective cha
 ## Completed
 - [x] All of the main results in Chapter 1 and Chapter 2, Section 1 and 2
 - [x] The conjunctive/disjunctive normal form problems in C2S1, which we will need later.
+- [x] Improve the `p![⬝]` syntax to automatically bring variables into scope. Maybe rename it to `P!`, too

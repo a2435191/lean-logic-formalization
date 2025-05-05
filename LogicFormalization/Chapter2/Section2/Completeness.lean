@@ -7,7 +7,6 @@ import Mathlib.Order.Minimal
 import Mathlib.Data.Fintype.Order
 import Mathlib.Data.Set.Finite.Lattice
 
-
 namespace Prop'
 
 open Notation
@@ -25,7 +24,7 @@ lemma tautology_axiom (h: Axiom p): ⊨ p := by
 lemma mp: S ⊢ p → S ⊢ implies p q → S ⊢ q
 | ⟨pf_p⟩, ⟨pf_pq⟩ => ⟨.mp p pf_p pf_pq⟩
 
-lemma mp₂: S ⊢ p → S ⊢ q → S ⊢ p![↑p → ↑q → ↑r] → S ⊢ r
+lemma mp₂: S ⊢ p → S ⊢ q → S ⊢ P![p → q → r] → S ⊢ r
 | hp, hq, hpqr => mp hq <| mp hp hpqr
 
 def weakenProof {S S': Set (Prop' A)} (h: S ⊆ S') {p: Prop' A}: Proof S p → Proof S' p
@@ -49,12 +48,12 @@ lemma proof_true': S ⊢ (⊤: Prop' A) :=
   ⟨.axiom .trivial⟩
 
 /-- Lemma 2.2.1 -/
-lemma proof_implies_self: ⊢ (implies p p) :=
-  have h₁: Proof ∅ p![↑p → (↑p → ↑p) → ↑p] := .axiom (.inr p (not (implies p p)))
-  have h₂: Proof ∅ p![(↑p → (↑p → ↑p) → ↑p) → (↑p → ↑p → ↑p) → ↑p → ↑p] :=
-    .axiom (.split p (implies p p) p)
-  have h₃: Proof ∅ p![(↑p → ↑p → ↑p) → ↑p → ↑p] := .mp _ h₁ h₂
-  have h₄: Proof ∅ p![↑p → ↑p → ↑p] := .axiom (.inr p (not p))
+lemma proof_implies_self: ⊢ P![p → p] :=
+  have h₁: Proof ∅ P![p → (p → p) → p] := .axiom (.inr p P![¬(p → p)])
+  have h₂: Proof ∅ P![(p → (p → p) → p) → (p → p → p) → p → p] :=
+    .axiom (.split p P![p → p] p)
+  have h₃: Proof ∅ P![(p → p → p) → p → p] := .mp _ h₁ h₂
+  have h₄: Proof ∅ P![p → p → p] := .axiom (.inr p (not p))
   ⟨.mp _ h₄ h₃⟩
 
 /-- Proposition 2.2.2 -/
@@ -75,18 +74,18 @@ lemma consistent_empty: consistent (∅: Set (Prop' A)) :=
 
 section Lemma7
 
-lemma left': ⊢ p![↑p → ↑q → ↑p] :=
+lemma left': ⊢ P![p → q → p] :=
   ⟨.axiom (.inr p (not q))⟩
 
-lemma generalize (h: ⊢ q): ⊢ implies p q :=
+lemma generalize (h: ⊢ q): ⊢ P![p → q] :=
   mp h left'
 
-lemma right': ⊢ p![↑p → ↑q → ↑q] :=
+lemma right': ⊢ P![p → q → q] :=
   generalize proof_implies_self
 
 
 open Classical in
-noncomputable def deduction.f {S} {p q: Prop' A}: Proof (S ∪ {p}) q → Proof S (implies p q)
+noncomputable def deduction.f {S} {p q: Prop' A}: Proof (S ∪ {p}) q → Proof S P![p → q]
 | .axiom hq =>
   .mp q (.axiom hq) (weakenProofEmpty (choice left'))
 | .assumption hS => by
@@ -97,14 +96,14 @@ noncomputable def deduction.f {S} {p q: Prop' A}: Proof (S ∪ {p}) q → Proof 
     exact choice proof_implies_self
   · exact .mp q (.assumption h) (weakenProofEmpty (choice left'))
 | .mp r hr hrq =>
-  have h₁: Proof S p![(↑p → ↑r → ↑q) → (↑p → ↑r) → ↑p → ↑q] :=
+  have h₁: Proof S P![(p → r → q) → (p → r) → p → q] :=
     .axiom <| Axiom.split p r q
-  have h₂: Proof S p![(↑p → ↑r) → ↑p → ↑q] :=
-    .mp p![↑p → ↑r → ↑q] (deduction.f hrq) h₁
+  have h₂: Proof S P![(p → r) → p → q] :=
+    .mp P![p → r → q] (deduction.f hrq) h₁
   .mp (implies p r) (deduction.f hr) h₂
 
 /-- Lemma 2.2.7 -/
-lemma deduction: S ∪ {p} ⊢ q → S ⊢ (implies p q) :=
+lemma deduction: S ∪ {p} ⊢ q → S ⊢ P![p → q] :=
   fun ⟨h⟩ => ⟨deduction.f h⟩
 
 end Lemma7
@@ -112,8 +111,8 @@ end Lemma7
 /-- Corollary 2.2.8 -/
 lemma proof_iff_inconsistent_neg: S ⊢ p ↔ inconsistent (S ∪ {not p}) := ⟨
   fun ⟨pf⟩ =>
-    have h₁: Proof (S ∪ {not p}) p![↑p → ¬↑p → ⊥] := .axiom (.absurd p)
-    have h₂: Proof (S ∪ {not p}) p![¬↑p → ⊥] := .mp p (weakenProof (Set.subset_union_left) pf) h₁
+    have h₁: Proof (S ∪ {not p}) P![p → ¬p → ⊥] := .axiom (.absurd p)
+    have h₂: Proof (S ∪ {not p}) P![¬p → ⊥] := .mp p (weakenProof (Set.subset_union_left) pf) h₁
     have h₃: Proof (S ∪ {not p}) (not p) := .assumption (Set.mem_union_right S rfl)
     ⟨.mp (not p) h₃ h₂⟩,
   fun pf =>

@@ -10,15 +10,15 @@ variable {A: Type u}
 
 inductive Axiom : Prop' A → Prop
 | trivial: Axiom ⊤
-| inl (p q: Prop' A): Axiom (implies p (or p q))
-| inr (p q: Prop' A): Axiom (implies p (or q p))
-| notOr (p q: Prop' A): Axiom (implies (not p) (implies (not q) (not (or p q))))
-| left (p q: Prop' A): Axiom (implies (and p q) p)
-| right (p q: Prop' A): Axiom (implies (and p q) q)
-| and (p q: Prop' A): Axiom (implies p (implies q (and p q)))
-| split (p q r: Prop' A): Axiom p![(↑p → ↑q → ↑r) → (↑p → ↑q) → ↑p → ↑r]
-| absurd (p: Prop' A): Axiom p![↑p → ¬↑p → ⊥]
-| contra (p: Prop' A): Axiom p![(¬↑p → ⊥) → ↑p]
+| inl (p q: Prop' A): Axiom P![p → p ∨ q]
+| inr (p q: Prop' A): Axiom P![p → q ∨ p]
+| notOr (p q: Prop' A): Axiom P![¬p → ¬q → ¬(p ∨ q)]
+| left (p q: Prop' A): Axiom P![p ∧ q → p]
+| right (p q: Prop' A): Axiom P![p ∧ q → q]
+| and (p q: Prop' A): Axiom P![p → q → p ∧ q]
+| split (p q r: Prop' A): Axiom P![(p → q → r) → (p → q) → p → r]
+| absurd (p: Prop' A): Axiom P![p → ¬p → ⊥]
+| contra (p: Prop' A): Axiom P![(¬p → ⊥) → p]
 
 inductive Proof (S: Set (Prop' A)): Prop' A → Type u -- Type so that we can do induction on proofs
 | assumption: {p: Prop' A} → p ∈ S → Proof S p
