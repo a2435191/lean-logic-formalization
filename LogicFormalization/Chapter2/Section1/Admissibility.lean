@@ -137,10 +137,10 @@ lemma append_inj (ht: Admissible t) (hu: Admissible u) (heq: t ++ w = u): t = u 
   have ⟨_, h⟩ := of_flatten_append_prefix_of_flatten (w := w)
     (List.forall_mem_singleton.mpr ht)
     (List.forall_mem_singleton.mpr hu)
-    ((List.flatten_singleton t).symm ▸ (List.flatten_singleton u).symm ▸ heq)
+    (List.flatten_singleton.symm ▸ List.flatten_singleton.symm ▸ heq)
 
   have: w = (List.drop 0 []).flatten :=
-    List.drop_succ_cons ▸ List.length_singleton t ▸ h
+    List.drop_succ_cons ▸ List.length_singleton ▸ h
   have: w = [] := this
   ⟨List.append_nil t ▸ this ▸ heq, this⟩
 
@@ -176,6 +176,12 @@ end Admissible
 /-- `v` occurs in `w` at starting position `i` -/
 def OccursIn {F: Type u} (v w: Word F) (i: Fin w.length) :=
   ∃ (w₁ w₂: Word F), w = w₁ ++ v ++ w₂ ∧ w₁.length = i
+
+/-- replace `v` in `w` at starting position `i` by `v'`-/
+noncomputable def replaceIn {F: Type u} (v w: Word F) (i: Fin w.length) (h: OccursIn v w i) (v': Word F): Word F :=
+  let w₁ := h.choose
+  let w₂ := h.choose_spec.choose
+  w₁ ++ v' ++ w₂
 
 namespace OccursIn
 
@@ -282,7 +288,7 @@ lemma occurs_in (h: OccursIn v ts[j.j] ⟨j.offset, j.offset_lt⟩): OccursIn v 
   let w₂ := v₂ ++ (ts.drop (j.j + 1)).flatten
   have hts := calc ts.flatten
     _ = (ts.take j.j).flatten ++ ts[j.j] ++ (ts.drop (j.j + 1)).flatten := by
-      rw [←List.flatten_singleton ts[j.j]]
+      rw [←List.flatten_singleton (l := ts[j.j])]
       simp only [←List.flatten_append]
       simp only [Fin.getElem_fin, List.take_append_getElem, List.take_append_drop]
     _ = w₁ ++ v ++ w₂ := by simp only [h₁, List.append_assoc, w₁, w₂]
@@ -335,17 +341,17 @@ lemma unique_admissible_occurring_in [Arity F] (hw: Admissible w) (i: Fin w.leng
 
 end Lemma6
 
--- We introduce replacing a little later in the book, so that we have unique `v`
-/-- replace `v` in `w` at starting position `i` by `v'`-/
-noncomputable def replaceIn (v w: Word F) (i: Fin w.length) (h: OccursIn v w i) (v': Word F): Word F :=
-  -- TODO: use uniqueness
-  let w₁ := h.choose
-  let w₂ := h.choose_spec.choose
-  w₁ ++ v' ++ w₂
-
-variable {v': Word F}
+/-- Like `replaceIn`, but uses `unique_admissible_occurring_in` so only needs an index `i` -/
+@[reducible]
+noncomputable def replaceIn' [Arity F] {w: Word F} (hw: Admissible w) (i: Fin w.length) (v': Word F): Word F :=
+  let ⟨v, ⟨_hv₁, hv₂⟩, _hv₃⟩ := Classical.indefiniteDescription _ (unique_admissible_occurring_in hw i)
+  replaceIn v w i hv₂ v'
 
 section Corollary7
+
+/-- Corollary 2.1.7 -/
+lemma admissible_replaceIn [Arity F] {w: Word F} (hw: Admissible w) {i: Fin w.length} {v': Word F} (hv': Admissible v'): Admissible (replaceIn' hw i v') :=
+  sorry
 
 end Corollary7
 
