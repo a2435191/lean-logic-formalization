@@ -27,10 +27,9 @@ class NotProvesLeft where
   notProves: α → Prop
 
 
-attribute [simp, reducible] Proves.proves
-attribute [simp, reducible] NotProves.notProves
-attribute [simp, reducible] ProvesLeft.proves
-attribute [simp, reducible] NotProvesLeft.notProves
+attribute [simp, reducible]
+  Proves.proves NotProves.notProves
+  ProvesLeft.proves NotProvesLeft.notProves
 
 scoped infix:50 " |- " => Proves.proves
 scoped infix:50 " ⊢ " => Proves.proves

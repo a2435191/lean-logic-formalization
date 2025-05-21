@@ -227,10 +227,8 @@ class ModelsLeft (α: Sort u) where
 class NotModelsLeft where
   notModels: α → Prop
 
-attribute [simp] Models.models
-attribute [simp] NotModels.notModels
-attribute [simp] ModelsLeft.models
-attribute [simp] NotModelsLeft.notModels
+attribute [simp] Models.models NotModels.notModels
+  ModelsLeft.models NotModelsLeft.notModels
 
 scoped infix:50 " |= " => Models.models
 scoped infix:50 " ⊨ " => Models.models
