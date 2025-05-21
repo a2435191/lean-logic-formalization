@@ -98,13 +98,6 @@ def conjNF' (p: Prop' A): Prop' A :=
     |>.map disj
     |> conj
 
-open Notation in
-#eval do
-  let p := P![(¬@'a' ∨ @'b') ∧ ¬@'c' ∧ ⊤]
-  println! p
-  println! (disjNF p, disjNF' p)
-  println! (conjNF p, conjNF' p)
-
 namespace List
 variable {α: Type u} {β: Type v} {l₁ l₂: List (List α)} {pred: List α → Bool}
 
