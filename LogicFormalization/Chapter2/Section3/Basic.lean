@@ -1,129 +1,68 @@
-import LogicFormalization.Chapter2.Section1.Arity
-import Mathlib.Data.Set.Defs
-import Mathlib.Data.Set.Operations
-import Mathlib.Logic.Basic
+import LogicFormalization.Chapter2.Section3.Elab
 import Mathlib.Algebra.Group.Hom.Defs
 import Mathlib.Data.Set.Image
 
-universe u v
-
-structure Language where
-  /-- The relational symbols. -/
-  ρ: Type u
-  /-- The functional symbols. -/
-  ϝ: Type v
-  [instArityRel: Arity ρ]
-  [instArityFun: Arity ϝ]
-
-namespace Language
-
--- TODO: automate basically all this for Gr as well as Ab, O, Ring, etc.
-namespace Gr
-
-inductive ρ
-deriving Repr, DecidableEq
-
-instance: Arity ρ :=
-  ⟨(nomatch ·)⟩
-
-inductive ϝ where
-| one | inv | mul
-deriving Repr, DecidableEq
-
-instance: Arity ϝ where
-  arity
-  | .one => 0
-  | .inv => 1
-  | .mul => 2
-
-/-! These instances make it possible to write e.g. `f 0` for
-`f: Fin (arity Language.Gr.ϝ.inv) → G` (the `0` is a `Fin`). -/
-instance: NeZero (arity Language.Gr.ϝ.inv) :=
-  ⟨by decide⟩
-
-instance: NeZero (arity Language.Gr.ϝ.mul) :=
-  ⟨by decide⟩
-
-end Gr
-
-@[reducible]
-def Gr := Language.mk Gr.ρ Gr.ϝ
-
-end Language
-
-instance (L: Language): Arity L.ρ := L.instArityRel
-instance (L: Language): Arity L.ϝ := L.instArityFun
-
-universe w
-
-structure Structure (L: Language) (A: Type u) [Nonempty A] where
-  /-- The interpretation `R^𝒜` of the relational symbol `R` in `𝒜`. -/
-  interpRel: (R: L.ρ) → Set (Fin (arity R) → A)
-  /-- The interpretation `F^𝒜` of the functional symbol `F` in `𝒜`.
-  See also `interpConst`. -/
-  interpFun: (F: L.ϝ) → (Fin (arity F) → A) → A
+universe u v w
 
 namespace Structure
-variable {L: Language}
-variable {A: Type u} [Nonempty A] {B: Type v} [Nonempty B]
 
-@[inherit_doc]
-scoped notation:max R "^" 𝒜 => Structure.interpRel 𝒜 R
+section
 
-@[inherit_doc]
-scoped notation:max F "^" 𝒜 => Structure.interpFun 𝒜 F
-
-/-- We identify the interpretation `h^𝒜` for
-constant symbol `c`, `h: arity c = 0`, with the value in `A`. -/
-def interpConst (𝒜: Structure L A) {c: L.ϝ} (h: arity c = 0) :=
-  𝒜.interpFun c fun f => (h ▸ f).elim0
-
-@[inherit_doc]
-scoped notation:max h "^" 𝒜 => Structure.interpConst 𝒜 h
-
-def Gr {G: Type*} [Nonempty G] [Group G] : Structure Language.Gr G where
-  interpRel := (nomatch ·)
+variable (A G: Type*) [Nonempty A] [Nonempty G]
+def Gr [Mul G] [Inv G] [One G] : Structure Language.Gr G where
+  interpRel := nofun
   interpFun
   | .one, _ => 1
   | .inv, f => (f 0)⁻¹
-  | .mul, f => (f 0) * (f 1)
+  | .mul, f => f 0 * f 1
 
-section Substructure
+def Ab [Nonempty A] [Add A] [Neg A] [Zero A] : Structure Language.Ab A where
+  interpRel := nofun
+  interpFun
+  | .zero, _ => 0
+  | .add, f  => f 0 + f 1
+  | .neg, f  => -(f 0)
 
-/-- `Substructure A ℬ h` is the substructure in `ℬ` with underlying set `A`. -/
-@[reducible, simp]
-def Substructure (A: Set B) [Nonempty A] (ℬ: Structure L B)
-    (h: ∀ F (a: Fin (arity F) → A), interpFun ℬ F (a ↑·) ∈ A) : Structure L A where
-  interpRel R := { a | (R^ℬ) (a ↑·) }
-  interpFun F a := ⟨(F^ℬ) (a ↑·), h ..⟩
+def O [LT A] : Structure Language.O A where
+  interpRel | .lt, f => f 0 < f 1
+  interpFun := nofun
 
-variable {A: Set B} [Nonempty A]
-/-- `IsSubstructure 𝒜 ℬ`, written `A ⊆ B`, means `A` is a substructure of `B`. -/
-structure IsSubstructure (𝒜: Structure L A) (ℬ: Structure L B): Prop where
-  h₁: ∀ F (a: Fin (arity F) → A), interpFun ℬ F (a ↑·) ∈ A
-  h₂: 𝒜 = Substructure A ℬ h₁
+def OAb [LT A] [Zero A] [Neg A] [Add A] : Structure Language.OAb A where
+  interpRel | .lt, f => f 0 < f 1
+  interpFun
+  | .zero, _ => 0
+  | .neg,  f => -(f 0)
+  | .add,  f => f 0 + f 1
 
-@[inherit_doc]
-scoped infix:50 " ⊆ " => IsSubstructure
+def Rig [Zero A] [One A] [Add A] [Mul A] : Structure Language.Rig A where
+  interpRel := nofun
+  interpFun
+  | .zero, _ => 0
+  | .one,  _ => 1
+  | .add,  f => f 0 + f 1
+  | .mul,  f => f 0 * f 1
+
+def Ring [Zero A] [One A] [Neg A] [Add A] [Mul A] : Structure Language.Ring A where
+  interpRel := nofun
+  interpFun
+  | .zero, _ => 0
+  | .one,  _ => 1
+  | .neg,  f => -(f 0)
+  | .add,  f => f 0 + f 1
+  | .mul,  f => f 0 * f 1
+
+end
+
+variable {L: Language} {B: Type v} [Nonempty B]
 
 lemma substructure_is_substructure {A: Set B} [Nonempty A] {ℬ: Structure L B}
     {h: ∀ F (a: Fin (arity F) → A), interpFun ℬ F (a ↑·) ∈ A}: Substructure A ℬ h ⊆ ℬ :=
   ⟨h, rfl⟩
 
-end Substructure
-
 section Hom
 
-variable {A: Type u} [Nonempty A] {B: Type v} [Nonempty B]
+variable {A: Type u} [Nonempty A]
 variable (𝒜: Structure L A) (ℬ: Structure L B) (h: A → B)
-
-structure Hom where
-  hRel: ∀ R a, a ∈ 𝒜.interpRel R → h ∘ a ∈ ℬ.interpRel R
-  hFun: ∀ F a, h ((𝒜.interpFun F) a) = (ℬ.interpFun F) (h ∘ a)
-
-structure StrongHom where
-  hRel: ∀ R a, a ∈ 𝒜.interpRel R ↔ h ∘ a ∈ ℬ.interpRel R
-  hFun: ∀ F a, h ((𝒜.interpFun F) a) = (ℬ.interpFun F) (h ∘ a)
 
 lemma StrongHom.mk' (hom: Hom 𝒜 ℬ h) (hh: ∀ R a, h ∘ a ∈ ℬ.interpRel R → a ∈ 𝒜.interpRel R):
     StrongHom 𝒜 ℬ h where
@@ -132,14 +71,6 @@ lemma StrongHom.mk' (hom: Hom 𝒜 ℬ h) (hh: ∀ R a, h ∘ a ∈ ℬ.interpRe
 
 lemma StrongHom.toHom: StrongHom 𝒜 ℬ h → Hom 𝒜 ℬ h
 | {hRel, hFun} => ⟨fun R a => (hRel R a).mp, hFun⟩
-
-structure Emb extends StrongHom 𝒜 ℬ h where
-  inj: Function.Injective h
-
-structure Iso extends StrongHom 𝒜 ℬ h where
-  bij: Function.Bijective h
-
-abbrev Auto h := Iso 𝒜 𝒜 h
 
 lemma emb_inclusion_map {A: Set B} [Nonempty ↑A] {𝒜: Structure L A} {ℬ: Structure L B}
     (h: 𝒜 ⊆ ℬ): Emb 𝒜 ℬ (fun a => a) :=
@@ -257,14 +188,14 @@ noncomputable instance Aut: Group {i: A → A // Auto 𝒜 i} where
 -- TODO: examples
 
 -- Somewhat clunky since `MonoidHom` is a `Type`
-lemma group_hom_iff [Group A] [Group B] {h: A → B}: (∃ h': A →* B, ↑h' = h) ↔ Hom Gr Gr h := by
+lemma group_hom_iff [Group A] [Group B] {h: A → B}: (∃ h': A →* B, ↑h' = h) ↔ Hom (Gr A) (Gr B) h := by
   constructor
   · intro ⟨⟨⟨h', h₁⟩, h₂⟩, hcoe⟩
     replace hcoe: h' = h := hcoe
     subst h'
     replace h₂: ∀ (x y : A), h (x * y) = h x * h y := h₂
     constructor
-    · exact (nomatch ·)
+    · nofun
     · rintro (_|_) <;> intro as
       · simpa only [Gr, forall_const]
       · simp only [Gr, Function.comp_apply]
