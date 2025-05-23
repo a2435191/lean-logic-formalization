@@ -8,8 +8,6 @@ namespace Language.Elab
 open Lean Elab Elab.Command
 
 syntax lt  := "<"
-/-- The syntax for relation symbols. Currently just `<`. -/
-syntax rels := lt
 
 syntax inv  := "⁻¹"
 syntax mul  := "⬝"
@@ -17,30 +15,54 @@ syntax neg  := "-"
 syntax add  := "+"
 /-- The syntax for function symbols. Currently
 `0`, `1`, `⁻¹`, `⬝`, `-`, and `+`.-/
-syntax funs := num <|> inv <|> mul <|> neg <|> add
 
-def symbolNameAndArity (s: Syntax): CommandElabM (Name × ℕ) :=
-  let arg := s.getArg 0
-  match arg.getKind with
-  | ``lt  => pure (`lt,  2)
-  | ``inv => pure (`inv, 1)
-  | ``mul => pure (`mul, 2)
-  | ``neg => pure (`neg, 1)
-  | ``add => pure (`add, 2)
-  | `num  =>
-    match arg.toNat with
-    | 0 => pure (`zero, 0)
-    | 1 => pure (`one,  0)
+syntax langSymbols := lt <|> inv <|> mul <|> neg <|> add <|> num
+
+inductive Symbol
+| lt | inv | mul | neg | add | zero | one
+
+namespace Symbol
+
+def ofSyntax.{u} {m: Type → Type u} [Monad m] [MonadExcept Exception m] (s: Syntax): m Symbol :=
+  match s.getKind with
+  | ``Elab.lt => pure lt
+  | ``Elab.inv => pure inv
+  | ``Elab.mul => pure mul
+  | ``Elab.neg => pure neg
+  | ``Elab.add => pure add
+  | `num =>
+    match s.toNat with
+    | 0 => pure zero
+    | 1 => pure one
     | n => throw (.error s
         s!"Only numeric literals `0` and `1` \
         are supported, but `{n}` was passed in")
-  | _ => throw (.error s s!"Received an invalid symbol")
+  | k => throw (.error s s!"Received an invalid symbol (kind {k})")
+
+/-- `true` if a functional symbol, `false` if a relation symbol -/
+def isFunction: Symbol → Bool
+| inv | mul | neg | add | zero | one => true
+| lt => false
+
+def name: Symbol → Name
+| lt => `lt | inv => `inv | mul => `mul
+| neg => `neg | add => `add
+| zero => `zero | one => `one
+
+def arity: Symbol → ℕ
+| zero | one => 0
+| neg | inv => 1
+| lt | mul | add => 2
+
+
+end Symbol
 
 open Lean.Parser.Command in
-def mkEnum {m: Type → Type} [Monad m] [MonadQuotation m] (typeName: Name) (elemNames: Array Name): m (TSyntax `Lean.Parser.Command.inductive) := do
+def mkEnum {m: Type → Type} [Monad m] [MonadQuotation m] (typeName: Name) (elems: Array Symbol): m (TSyntax `Lean.Parser.Command.inductive) := do
   let emptyOptDeclSig ← `(optDeclSig|)
-  let ctors: Array (TSyntax `Lean.Parser.Command.ctor) ← elemNames.mapM fun name => do
-    let ctor := mkNode `Lean.Parser.Command.ctor #[mkNullNode, mkAtom "|", ←`(declModifiers|), ←`($(mkIdent name)), emptyOptDeclSig]
+  let ctors: Array (TSyntax `Lean.Parser.Command.ctor) ← elems.mapM fun sym => do
+    let ctor := mkNode `Lean.Parser.Command.ctor
+      #[mkNullNode, mkAtom "|", ←`(declModifiers|), ←`($(mkIdent sym.name)), emptyOptDeclSig]
     return ⟨ctor⟩
   return ⟨
     .node .none `Lean.Parser.Command.inductive #[
@@ -54,40 +76,39 @@ def mkEnum {m: Type → Type} [Monad m] [MonadQuotation m] (typeName: Name) (ele
     ]⟩
 
 /-- Make an `Arity` instance for `ϝ` or `ρ`. If the type is empty, we use `nofun`. Otherwise, match statement to the appropriate arity -/
-private def mkArityInstance (typeName: Name) (namesAndArities: Array (Name × ℕ))
+private def mkArityInstance (typeName: Name) (symbols: Array Symbol)
     : CommandElabM (TSyntax `command) := do
-  if namesAndArities.isEmpty then  `(
+  if symbols.isEmpty then  `(
     instance: Arity $(mkIdent typeName) := ⟨nofun⟩)
   else
-    let alts ← namesAndArities.mapM fun (name, arity) =>
+    let alts ← symbols.mapM fun sym =>
       `(Parser.Term.matchAltExpr|
-        | .$(mkIdent name) => $(Syntax.mkNatLit arity))
+        | .$(mkIdent sym.name) => $(Syntax.mkNatLit sym.arity))
     `(
       instance: Arity $(mkIdent typeName) where
         arity $alts:matchAlt*)
 
 /- For the symbols with non-zero arities, generate `NeZero` instances so that
   we can write e.g. `f 0` for `f: Fin (arity Language.Gr.ϝ.inv) → G` (the `0` is a `Fin`). -/
-private def mkNeZeroInstances (typeName: Name) (namesAndArities: Array (Name × ℕ))
+private def mkNeZeroInstances (typeName: Name) (symbols: Array Symbol)
     : CommandElabM (Array (TSyntax `command)) := do
-  let stxs ← namesAndArities.filterMapM fun (name, arity) =>
-    if arity > 0 then some <$> `(
-      instance : NeZero (arity $(mkIdent <| typeName ++ name)) :=
+  let stxs ← symbols.filterMapM fun sym =>
+    if sym.arity > 0 then some <$> `(
+      instance : NeZero (arity $(mkIdent <| typeName ++ sym.name)) :=
         ⟨by decide⟩)
     else pure none
   return stxs
 
 /-- Declare a new language (set of symbols). -/
-elab "#declare_language" lang:ident "{" symbols:(funs<|>rels),* "}" : command => do
-  let (fs, rs) := symbols.getElems.partition (·.raw.isOfKind ``funs)
-  let fNamesAndArities ← fs.mapM symbolNameAndArity
-  let rNamesAndArities ← rs.mapM symbolNameAndArity
+elab "#declare_language" lang:ident "{" symbols:langSymbols,* "}" : command => do
+  let symbols ← symbols.getElems.mapM (fun stx => Symbol.ofSyntax (stx.raw.getArg 0))
+  let (fSymbols, rSymbols) := symbols.partition Symbol.isFunction
 
   -- declare the inductive types
   let ϝ := lang.getId ++ `ϝ
   let ρ := lang.getId ++ `ρ
-  let fStx ← mkEnum ϝ fNamesAndArities.unzip.1
-  let rStx ← mkEnum ρ rNamesAndArities.unzip.1
+  let fStx ← mkEnum ϝ fSymbols
+  let rStx ← mkEnum ρ rSymbols
 
   elabInductive {} fStx
   elabInductive {} rStx
@@ -96,12 +117,12 @@ elab "#declare_language" lang:ident "{" symbols:(funs<|>rels),* "}" : command =>
     namespace $lang
     deriving instance Repr, DecidableEq for $(mkIdent ϝ), $(mkIdent ρ)
 
-    $(←mkArityInstance `ϝ fNamesAndArities)
-    $(←mkArityInstance `ρ rNamesAndArities)
+    $(←mkArityInstance `ϝ fSymbols)
+    $(←mkArityInstance `ρ rSymbols)
   )
-  for cmd in ←mkNeZeroInstances `ϝ fNamesAndArities do
+  for cmd in ←mkNeZeroInstances `ϝ fSymbols do
     elabCommand cmd
-  for cmd in ←mkNeZeroInstances `ρ rNamesAndArities do
+  for cmd in ←mkNeZeroInstances `ρ rSymbols do
     elabCommand cmd
 
   elabCommand <| ←`(
