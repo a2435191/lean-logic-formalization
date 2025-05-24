@@ -6,6 +6,8 @@ universe u v w
 
 namespace Structure
 
+-- TODO: more examples beyond those in Meta. See pp. 25-26
+
 variable {L: Language} {B: Type v} [Nonempty B]
 
 lemma substructure_is_substructure {A: Set B} [Nonempty A] {ℬ: Structure L B}
@@ -31,6 +33,8 @@ lemma emb_inclusion_map {A: Set B} [Nonempty ↑A] {𝒜: Structure L A} {ℬ: S
   { inj := fun _ _ => Subtype.eq,
     hRel _R _a := hR ▸ Iff.rfl
     hFun _F _a := hF ▸ rfl }
+
+-- TODO: substructure examples from p. 26
 
 def Substructure.ofHom {𝒜: Structure L A} {ℬ: Structure L B} {h: A → B} (hh: Hom 𝒜 ℬ h) :=
   Substructure (Set.range h) ℬ fun F bs => by
@@ -138,8 +142,7 @@ noncomputable instance Aut: Group {i: A → A // Auto 𝒜 i} where
     congr 1
     exact comp_invFun a.prop.bij.right
 
--- TODO: examples
-
+-- TODO: examples at top of p. 27
 
 lemma group_hom_iff [Group A] [Group B] {h: A → B}:
     (∀ x y: A, h (x * y) = h x * h y) ↔ Hom (Gr A) (Gr B) h := by
@@ -161,7 +164,7 @@ lemma group_hom_iff [Group A] [Group B] {h: A → B}:
   · let xy: Fin 2 → A | 0 => x | 1 => y
     exact hyp₂ .mul xy
 
-
+-- TODO: ring homomorphism proof, similar to above
 end Hom
 
 -- TODO: congruence
