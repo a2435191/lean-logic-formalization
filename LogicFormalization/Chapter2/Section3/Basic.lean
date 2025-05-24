@@ -140,32 +140,28 @@ noncomputable instance Aut: Group {i: A → A // Auto 𝒜 i} where
 
 -- TODO: examples
 
--- Somewhat clunky since `MonoidHom` is a `Type`
-lemma group_hom_iff [Group A] [Group B] {h: A → B}: (∃ h': A →* B, ↑h' = h) ↔ Hom (Gr A) (Gr B) h := by
-  constructor
-  · intro ⟨⟨⟨h', h₁⟩, h₂⟩, hcoe⟩
-    replace hcoe: h' = h := hcoe
-    subst h'
-    replace h₂: ∀ (x y : A), h (x * y) = h x * h y := h₂
-    constructor
-    · nofun
-    · rintro (_|_) <;> intro as
-      · simpa only [Gr, forall_const]
-      · simp only [Gr, Function.comp_apply]
-        apply MonoidHom.map_inv ⟨⟨h, h₁⟩, h₂⟩
-      · simp only [Gr]
-        apply h₂
-  · intro ⟨_, hFun⟩
-    have (a₁ a₂: A): h (a₁ * a₂) = h a₁ * h a₂ := by
-      have := hFun Language.Gr.ϝ.mul
-      simp only [Gr] at this
-      let a: Fin 2 → A
-      | 0 => a₁
-      | 1 => a₂
-      exact this a
-    exact ⟨MonoidHom.mk' h this, rfl⟩
 
--- TODO: show ring, etc. homomorphisms, isomorphisms are the same. Probably automate this
+lemma group_hom_iff [Group A] [Group B] {h: A → B}:
+    (∀ x y: A, h (x * y) = h x * h y) ↔ Hom (Gr A) (Gr B) h := by
+  refine ⟨fun hyp => ⟨nofun, fun F as => ?_⟩, fun ⟨hyp₁, hyp₂⟩ x y => ?_⟩
+  · have h_one: h 1 = 1 := by
+      have: h 1 = h 1 * h 1 := by rw [←hyp, one_mul]
+      have := congr_arg (· * (h 1)⁻¹) this
+      simp only [mul_assoc, mul_inv_cancel, mul_one] at this
+      exact this.symm
+    have h_inv: ∀ a, h a⁻¹ = (h a)⁻¹ := fun a => by
+      apply eq_inv_of_mul_eq_one_left
+      convert (hyp _ _).symm
+      convert h_one.symm
+      apply inv_mul_cancel
+    cases F
+    · exact h_one
+    · apply h_inv
+    · apply hyp
+  · let xy: Fin 2 → A | 0 => x | 1 => y
+    exact hyp₂ .mul xy
+
+
 end Hom
 
 -- TODO: congruence
