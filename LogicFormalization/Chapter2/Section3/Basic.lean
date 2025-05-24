@@ -1,4 +1,4 @@
-import LogicFormalization.Chapter2.Section3.Elab
+import LogicFormalization.Chapter2.Section3.Meta
 import Mathlib.Algebra.Group.Hom.Defs
 import Mathlib.Data.Set.Image
 

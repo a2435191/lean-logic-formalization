@@ -112,8 +112,8 @@ elab "#declare_language" lang:ident "{" symbols:langSymbols,* "}" : command => d
   -- declare the inductive types
   let ϝ := lang.getId ++ `ϝ
   let ρ := lang.getId ++ `ρ
-  let fStx ← mkEnum ϝ fSymbols
-  let rStx ← mkEnum ρ rSymbols
+  let fStx ← mkEnum (`Language ++ ϝ) fSymbols
+  let rStx ← mkEnum (`Language ++ ρ) rSymbols
 
   elabInductive {} fStx
   elabInductive {} rStx
