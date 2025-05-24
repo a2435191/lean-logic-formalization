@@ -2,8 +2,9 @@ import LogicFormalization.Chapter2.Section3.Defs
 import Lean.Meta.Transform
 import Lean.Elab.Deriving.Basic
 import Lean.Elab.Deriving.Util
+import Mathlib.Algebra.Notation.Defs -- for Inv
 
-namespace Language.Elab
+namespace Meta
 
 open Lean Elab Elab.Command
 
@@ -25,11 +26,11 @@ namespace Symbol
 
 def ofSyntax.{u} {m: Type → Type u} [Monad m] [MonadExcept Exception m] (s: Syntax): m Symbol :=
   match s.getKind with
-  | ``Elab.lt => pure lt
-  | ``Elab.inv => pure inv
-  | ``Elab.mul => pure mul
-  | ``Elab.neg => pure neg
-  | ``Elab.add => pure add
+  | ``Meta.lt => pure lt
+  | ``Meta.inv => pure inv
+  | ``Meta.mul => pure mul
+  | ``Meta.neg => pure neg
+  | ``Meta.add => pure add
   | `num =>
     match s.toNat with
     | 0 => pure zero
@@ -54,6 +55,11 @@ def arity: Symbol → ℕ
 | neg | inv => 1
 | lt | mul | add => 2
 
+/-- Get the corresponding notation type class in the base logic. For example, `zero => Zero`, `add => Add`.-/
+def typeClass: Symbol → Name
+| lt => ``LT | inv => ``Inv | mul => ``Mul
+| neg => ``Neg | add => ``Add
+| zero => ``Zero | one => ``One
 
 end Symbol
 
@@ -92,12 +98,11 @@ private def mkArityInstance (typeName: Name) (symbols: Array Symbol)
   we can write e.g. `f 0` for `f: Fin (arity Language.Gr.ϝ.inv) → G` (the `0` is a `Fin`). -/
 private def mkNeZeroInstances (typeName: Name) (symbols: Array Symbol)
     : CommandElabM (Array (TSyntax `command)) := do
-  let stxs ← symbols.filterMapM fun sym =>
+  symbols.filterMapM fun sym =>
     if sym.arity > 0 then some <$> `(
       instance : NeZero (arity $(mkIdent <| typeName ++ sym.name)) :=
         ⟨by decide⟩)
     else pure none
-  return stxs
 
 /-- Declare a new language (set of symbols). -/
 elab "#declare_language" lang:ident "{" symbols:langSymbols,* "}" : command => do
@@ -113,26 +118,27 @@ elab "#declare_language" lang:ident "{" symbols:langSymbols,* "}" : command => d
   elabInductive {} fStx
   elabInductive {} rStx
 
+  let languageNS := mkIdent <| `Language ++ lang.getId
   elabCommand <| ←`(
-    namespace $lang
+    namespace $languageNS
     deriving instance Repr, DecidableEq for $(mkIdent ϝ), $(mkIdent ρ)
 
-    $(←mkArityInstance `ϝ fSymbols)
-    $(←mkArityInstance `ρ rSymbols)
+    $(←mkArityInstance ϝ fSymbols)
+    $(←mkArityInstance ρ rSymbols)
   )
-  for cmd in ←mkNeZeroInstances `ϝ fSymbols do
+  for cmd in ←mkNeZeroInstances ϝ fSymbols do
     elabCommand cmd
-  for cmd in ←mkNeZeroInstances `ρ rSymbols do
+  for cmd in ←mkNeZeroInstances ρ rSymbols do
     elabCommand cmd
 
   elabCommand <| ←`(
-    end $lang
+    end $languageNS
 
     @[reducible]
-    def $(lang) := Language.mk $(mkIdent ρ) $(mkIdent ϝ))
+    def $languageNS := Language.mk $(mkIdent ρ) $(mkIdent ϝ))
 
 
-end Elab
+end Meta
 
 #declare_language Gr   { 1, ⁻¹, ⬝ }     -- Groups
 #declare_language Ab   { 0, -, + }    -- Additive abelian groups
@@ -142,5 +148,3 @@ end Elab
 #declare_language Ring { 0, 1, -, +, ⬝ } -- Rings
 
 -- TODO: add proper documentation comments (that propagate to the inductive types)
-
-end Language
