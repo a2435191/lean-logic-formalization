@@ -24,7 +24,9 @@ inductive Symbol
 
 namespace Symbol
 
-def ofSyntax.{u} {m: Type → Type u} [Monad m] [MonadExcept Exception m] (s: Syntax): m Symbol :=
+variable {m: Type → Type} [Monad m] [MonadExcept Exception m]
+
+def ofSyntax (s: Syntax): m Symbol :=
   match s.getKind with
   | ``Meta.lt => pure lt
   | ``Meta.inv => pure inv
@@ -61,8 +63,19 @@ def typeClass: Symbol → Name
 | neg => ``Neg | add => ``Add
 | zero => ``Zero | one => ``One
 
+/-- For `matchArms`. `f` is a mapping `Fin (arity sym) → A`. -/
+def interp [MonadQuotation m]: Symbol → m (TSyntax `term)
+| .lt => `(f 0 < f 1)
+| .one => `(1)
+| .zero => `(0)
+| .add => `(f 0 + f 1)
+| .neg => `(-(f 0))
+| .mul => `(f 0 * f 1)
+| .inv => `((f 0)⁻¹)
+
 end Symbol
 
+#check Lean.Parser.Command.definition
 open Lean.Parser.Command in
 def mkEnum {m: Type → Type} [Monad m] [MonadQuotation m] (typeName: Name) (elems: Array Symbol): m (TSyntax `Lean.Parser.Command.inductive) := do
   let emptyOptDeclSig ← `(optDeclSig|)
@@ -104,6 +117,27 @@ private def mkNeZeroInstances (typeName: Name) (symbols: Array Symbol)
         ⟨by decide⟩)
     else pure none
 
+
+private def mkStructure (langName: Name) (symbols: Array Symbol):
+    CommandElabM (TSyntax `command) := do
+  let instances ← symbols.mapM fun sym =>
+    `(bracketedBinder| [$(mkIdent sym.typeClass) A])
+
+  let defName := mkIdent <| `Structure ++ langName
+  let langTypeForStructure := mkIdent <| `Language ++ langName
+  let mkMatchArms (isFun: Bool) := (
+    let symbols := symbols.filter (Symbol.isFunction · == isFun)
+    if symbols.isEmpty then
+      Array.mkArray1 <$> `(Parser.Term.matchAltExpr| | a, _ => nomatch a)
+    else symbols.mapM fun sym => do
+      `(Parser.Term.matchAltExpr| | .$(mkIdent sym.name), f => $(←sym.interp))
+  )
+  `(
+    def $defName (A: Type*) $[$instances]* [Nonempty A]: Structure $langTypeForStructure A where
+      interpRel $(←mkMatchArms false):matchAlt*
+      interpFun $(←mkMatchArms true ):matchAlt*
+  )
+
 /-- Declare a new language (set of symbols). -/
 elab "#declare_language" lang:ident "{" symbols:langSymbols,* "}" : command => do
   let symbols ← symbols.getElems.mapM (fun stx => Symbol.ofSyntax (stx.raw.getArg 0))
@@ -136,6 +170,19 @@ elab "#declare_language" lang:ident "{" symbols:langSymbols,* "}" : command => d
 
     @[reducible]
     def $languageNS := Language.mk $(mkIdent ρ) $(mkIdent ϝ))
+  /-Make a structure like
+
+    ```def Structure.Ring [Zero A] [One A] [Neg A] [Add A] [Mul A] : Structure Language.Ring A where
+    interpRel := nofun
+    interpFun
+    | .zero, _ => 0
+    | .one,  _ => 1
+    | .neg,  f => -(f 0)
+    | .add,  f => f 0 + f 1
+    | .mul,  f => f 0 * f 1
+    ```
+  -/
+  elabCommand (←mkStructure lang.getId symbols)
 
 
 end Meta

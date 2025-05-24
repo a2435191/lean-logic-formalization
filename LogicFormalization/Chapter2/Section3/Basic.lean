@@ -6,53 +6,6 @@ universe u v w
 
 namespace Structure
 
-section
-
-variable (A G: Type*) [Nonempty A] [Nonempty G]
-def Gr [Mul G] [Inv G] [One G] : Structure Language.Gr G where
-  interpRel := nofun
-  interpFun
-  | .one, _ => 1
-  | .inv, f => (f 0)⁻¹
-  | .mul, f => f 0 * f 1
-
-def Ab [Nonempty A] [Add A] [Neg A] [Zero A] : Structure Language.Ab A where
-  interpRel := nofun
-  interpFun
-  | .zero, _ => 0
-  | .add, f  => f 0 + f 1
-  | .neg, f  => -(f 0)
-
-def O [LT A] : Structure Language.O A where
-  interpRel | .lt, f => f 0 < f 1
-  interpFun := nofun
-
-def OAb [LT A] [Zero A] [Neg A] [Add A] : Structure Language.OAb A where
-  interpRel | .lt, f => f 0 < f 1
-  interpFun
-  | .zero, _ => 0
-  | .neg,  f => -(f 0)
-  | .add,  f => f 0 + f 1
-
-def Rig [Zero A] [One A] [Add A] [Mul A] : Structure Language.Rig A where
-  interpRel := nofun
-  interpFun
-  | .zero, _ => 0
-  | .one,  _ => 1
-  | .add,  f => f 0 + f 1
-  | .mul,  f => f 0 * f 1
-
-def Ring [Zero A] [One A] [Neg A] [Add A] [Mul A] : Structure Language.Ring A where
-  interpRel := nofun
-  interpFun
-  | .zero, _ => 0
-  | .one,  _ => 1
-  | .neg,  f => -(f 0)
-  | .add,  f => f 0 + f 1
-  | .mul,  f => f 0 * f 1
-
-end
-
 variable {L: Language} {B: Type v} [Nonempty B]
 
 lemma substructure_is_substructure {A: Set B} [Nonempty A] {ℬ: Structure L B}
