@@ -167,6 +167,30 @@ lemma group_hom_iff [Group A] [Group B] {h: A → B}:
 -- TODO: ring homomorphism proof, similar to above
 end Hom
 
--- TODO: congruence
--- TODO: products
--- TODO: homeworks
+lemma Congruence.quotientIsStrongHom {A: Type u} [Nonempty A] {𝒜: Structure L A} {c: Congruence 𝒜}:
+    StrongHom 𝒜 (quotient 𝒜 c) (fun a => ⟦a⟧) := by
+  constructor
+  case' hRel =>
+    intro R a
+    apply c.hRel
+  case' hFun =>
+    intro F a
+    apply Quotient.eq.mpr
+    apply c.hFun
+  all_goals
+    intro i
+    apply c.hEquiv.symm
+    apply Quotient.mk_out (s := c.toSetoid)
+
+variable {I: Type u} {β: I → Type v}
+  (hβ: ∀ i, Nonempty (β i)) (ℬ: (i: I) → Structure L (β i))
+
+lemma product_projection_hom (j: I): Hom (product hβ ℬ) (ℬ j) (fun b => b j) where
+  hRel _R _b hb := hb j
+  hFun _F _b := rfl
+
+variable {A: Type u} [Nonempty A] {𝒜: Structure L A}
+lemma product_of_homs (h: (i: I) → A → β i) (hyp: ∀ i, Hom 𝒜 (ℬ i) (h i)):
+    Hom 𝒜 (product hβ ℬ) (fun a i => h i a) where
+  hRel R a ha i := (hyp i).hRel R a ha
+  hFun F a := funext fun i => (hyp i).hFun F a

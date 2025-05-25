@@ -1,5 +1,6 @@
 import LogicFormalization.Chapter2.Section1.Arity
 import Mathlib.Data.Set.Operations
+import Mathlib.Data.Quot
 
 universe u v
 
@@ -83,4 +84,59 @@ structure Iso extends StrongHom 𝒜 ℬ h where
 abbrev Auto h := Iso 𝒜 𝒜 h
 
 end Hom
+
+structure Congruence (𝒜: Structure L A) where
+  /-- The equivalence relation on `A`. -/
+  r: A → A → Prop
+  hEquiv: Equivalence r
+  hRel: ∀ R: L.ρ, ∀ a b, (∀ i, r (a i) (b i)) → (a ∈ (R^𝒜) ↔ b ∈ R^𝒜)
+  hFun: ∀ F: L.ϝ, ∀ a b, (∀ i, r (a i) (b i)) → r ((F^𝒜) a) ((F^𝒜) b)
+
+
+namespace Congruence
+/-- The congruence `~ₕ`. -/
+def ofStrongHom {𝒜: Structure L A} {ℬ: Structure L B} {h: A → B}
+    (hh: StrongHom 𝒜 ℬ h): Congruence 𝒜 where
+  r a₁ a₂ := h a₁ = h a₂
+  hEquiv := by constructor <;> intros <;> simp_all only
+  hRel R a b hyp := by
+    have: h ∘ a = h ∘ b := funext hyp
+    rw [hh.hRel, this, hh.hRel]
+  hFun F a b hyp := by
+    have: h ∘ a = h ∘ b := funext hyp
+    rw [hh.hFun, this, hh.hFun]
+
+-- for `quotient`
+instance [h: Nonempty A] [s: Setoid A]: Nonempty (Quotient s) :=
+  (nonempty_quotient_iff s).mpr h
+
+def toSetoid (𝒜: Structure L A): Congruence 𝒜 → Setoid A
+| { r, hEquiv, .. } => ⟨r, hEquiv⟩
+
+noncomputable def quotient (𝒜: Structure L A) (c: Congruence 𝒜):
+    Structure L (Quotient c.toSetoid) where
+  interpRel R a := (R^𝒜) fun i => (a i).out
+  interpFun F a := ⟦(F^𝒜) fun i => (a i).out⟧
+
+end Congruence
+
+/-! Recall that the arbitrary (incl. infinite) product of types indexed by `I`
+can be represented by
+```
+def typeProduct (I: Type u) (βs: I → Type v) :=
+  (i: I) → βs i
+```
+-/
+
+section
+
+variable {I: Type u} {β: I → Type v}
+  (hβ: ∀ i, Nonempty (β i)) (ℬ: (i: I) → Structure L (β i))
+
+/-- The product of `L`-structures `ℬᵢ` over `i ∈ I`, a possibly infinite indexing type. -/
+def product: Structure L ((i: I) → β i) where
+  interpRel R b := ∀ i: I, (R^(ℬ i)) (fun j => b j i)
+  interpFun F b i := (F^(ℬ i)) (fun j => b j i)
+
+end
 end Structure
