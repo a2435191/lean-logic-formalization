@@ -33,7 +33,7 @@ lemma occursIn_of_occursIn_app {v: Var} {F} {ts: Fin (arity F) → Term L}
     (h: occursIn v (.app F ts)): ∃ i, occursIn v (ts i) :=
   h
 
-instance instDecidableOccursIn (v) (t: Term L) [DecidableEq Var] :
+instance instDecidableOccursIn (v) (t: Term L) :
     Decidable (occursIn v t) :=
   match t with
   | .var v' => if h: v = v' then .isTrue h else .isFalse h
@@ -60,7 +60,7 @@ def ofApp {F} {m} {ts: Fin (arity F) → Term L} {x: Fin m → Var} (hx: AreVars
     (i: Fin (arity F)) → AreVarsFor x (ts i) :=
   fun _i => ⟨hx.inj', fun h => hx.occursIn' (occursIn_app h)⟩
 
-def idx {t: Term L} {v: Var} [DecidableEq Var] {x: Fin m → Var}
+def idx {t: Term L} {v: Var} {x: Fin m → Var}
     (hx: AreVarsFor x t) (h: occursIn v t): { i : Fin m // x i = v } :=
   match t with
   | .var _v' =>
@@ -85,8 +85,7 @@ end AreVarsFor
 
 variable {A: Type u} [Nonempty A]
 
-def interp (t: Term L) (𝒜: Structure L A) {m} {x: Fin m → Var} (hx: AreVarsFor x t)
-    [DecidableEq Var]:
+def interp (t: Term L) (𝒜: Structure L A) {m} {x: Fin m → Var} (hx: AreVarsFor x t):
     (Fin m → A) → A :=
   match t with
   | .var _xᵢ => fun as => as (hx.idx rfl)
@@ -94,8 +93,7 @@ def interp (t: Term L) (𝒜: Structure L A) {m} {x: Fin m → Var} (hx: AreVars
     interp (ts i) 𝒜 (.ofApp hx i) as)
 
 open Structure in
-lemma interp_substructure [DecidableEq Var]
-    {B: Type v} {A: Set B} [Nonempty A]
+lemma interp_substructure {B: Type v} {A: Set B} [Nonempty A]
     {𝒜: Structure L A} {ℬ: Structure L B}
     (h: 𝒜 ⊆ ℬ) {t: Term L} {m} {x: Fin m → Var} (hx: AreVarsFor x t):
     ∀ (a: Fin m → A), interp t 𝒜 hx a = interp t ℬ hx (a ·) :=
@@ -131,19 +129,17 @@ def AreVarsFor.empty {t: Term L} (ht: varFree t): AreVarsFor Fin.elim0 t where
   inj' := Function.injective_of_subsingleton _
   occursIn' := by simp [varFree_iff.mp ht _]
 
-def interpConst [DecidableEq Var]
-    (t: Term L) (ht: varFree t) (𝒜: Structure L A): A :=
+def interpConst (t: Term L) (ht: varFree t) (𝒜: Structure L A): A :=
   interp t 𝒜 (.empty ht) Fin.elim0
 
-def interpConst.spec [DecidableEq Var]
-    (t: Term L) (ht: varFree t) (𝒜: Structure L A): A :=
+def interpConst.spec (t: Term L) (ht: varFree t) (𝒜: Structure L A): A :=
   match t with
   | .var _ => False.elim ht
   | .app F ts =>
     (F^𝒜) (fun i => spec (t := ts i) (ht i) 𝒜)
 
-lemma interpConst_eq_spec {t: Term L} (ht: varFree t) {𝒜: Structure L A}
-    [DecidableEq Var] : interpConst t ht 𝒜 = interpConst.spec t ht 𝒜 :=
+lemma interpConst_eq_spec {t: Term L} (ht: varFree t) {𝒜: Structure L A} :
+    interpConst t ht 𝒜 = interpConst.spec t ht 𝒜 :=
   match t with
   | .var _ => rfl
   | .app F ts => by
@@ -152,7 +148,7 @@ lemma interpConst_eq_spec {t: Term L} (ht: varFree t) {𝒜: Structure L A}
     rfl
 
 /-- `replace t τ x` is `t(τ₁/x₁, ..., τₙ/xₙ)`. Note that `x` must be injective. -/
-def replace [DecidableEq Var] (t: Term L) {m} (τ: Fin m → Term L)
+def replace (t: Term L) {m} (τ: Fin m → Term L)
     (x: Fin m ↪ Var): Term L :=
   match t with
   | .var v =>
@@ -162,7 +158,7 @@ def replace [DecidableEq Var] (t: Term L) {m} (τ: Fin m → Term L)
   | .app F ts => .app F (fun i => replace (ts i) τ x)
 
 /-- Lemma 2.4.1 -/
-theorem replace_varFree [DecidableEq Var] {t: Term L} {m} {τ: Fin m → Term L}
+theorem replace_varFree {t: Term L} {m} {τ: Fin m → Term L}
     {x: Fin m → Var} {hx: AreVarsFor x t} (h: ∀ i, varFree (τ i)):
     varFree (replace t τ ⟨x, hx.inj'⟩) :=
   -- TODO: clean up lol, ideally both cases to term mode
@@ -183,4 +179,4 @@ theorem replace_varFree [DecidableEq Var] {t: Term L} {m} {τ: Fin m → Term L}
     · apply AreVarsFor.ofApp hx
     · assumption
 
--- TODO: generators, (maybe) notation, homework
+-- TODO: generators, (maybe) notation
