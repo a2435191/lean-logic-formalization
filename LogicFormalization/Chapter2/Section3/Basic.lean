@@ -11,7 +11,7 @@ namespace Structure
 variable {L: Language} {B: Type v} [Nonempty B]
 
 lemma substructure_is_substructure {A: Set B} [Nonempty A] {ℬ: Structure L B}
-    {h: ∀ F (a: Fin (arity F) → A), interpFun ℬ F (a ↑·) ∈ A}: Substructure A ℬ h ⊆ ℬ :=
+    {h: ∀ F (a: Fin (arity F) → A), interpFun ℬ F (a ·) ∈ A}: Substructure A ℬ h ⊆ ℬ :=
   ⟨h, rfl⟩
 
 section Hom

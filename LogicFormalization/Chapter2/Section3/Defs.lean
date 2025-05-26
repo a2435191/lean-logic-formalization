@@ -26,13 +26,13 @@ structure Structure (L: Language) (A: Type u) [Nonempty A] where
 
 namespace Structure
 variable {L: Language}
-variable {A: Type u} [Nonempty A] {B: Type v} [Nonempty B]
+variable {A: Type u} [Nonempty A] {B: Type v}
 
 @[inherit_doc]
-scoped notation:max R "^" 𝒜 => Structure.interpRel 𝒜 R
+notation:max R "^" 𝒜 => Structure.interpRel 𝒜 R
 
 @[inherit_doc]
-scoped notation:max F "^" 𝒜 => Structure.interpFun 𝒜 F
+notation:max F "^" 𝒜 => Structure.interpFun 𝒜 F
 
 /-- We identify the interpretation `h^𝒜` for
 constant symbol `c`, `h: arity c = 0`, with the value in `A`. -/
@@ -40,21 +40,25 @@ def interpConst (𝒜: Structure L A) {c: L.ϝ} (h: arity c = 0) :=
   𝒜.interpFun c fun f => (h ▸ f).elim0
 
 @[inherit_doc]
-scoped notation:max h "^" 𝒜 => Structure.interpConst 𝒜 h
+notation:max h "^" 𝒜 => Structure.interpConst 𝒜 h
 
 section Substructure
+
+set_option synthInstance.checkSynthOrder false in
+scoped instance (A: Set B) [inst: Nonempty A]: Nonempty B :=
+  ⟨↑(Classical.choice inst)⟩
 
 /-- `Substructure A ℬ h` is the substructure in `ℬ` with underlying set `A`. -/
 @[reducible, simp]
 def Substructure (A: Set B) [Nonempty A] (ℬ: Structure L B)
-    (h: ∀ F (a: Fin (arity F) → A), interpFun ℬ F (a ↑·) ∈ A) : Structure L A where
-  interpRel R := { a | (R^ℬ) (a ↑·) }
-  interpFun F a := ⟨(F^ℬ) (a ↑·), h ..⟩
+    (h: ∀ F (a: Fin (arity F) → A), interpFun ℬ F (a ·) ∈ A) : Structure L A where
+  interpRel R := { a | (R^ℬ) (a ·) }
+  interpFun F a := ⟨(F^ℬ) (a ·), h ..⟩
 
 variable {A: Set B} [Nonempty A]
 /-- `IsSubstructure 𝒜 ℬ`, written `A ⊆ B`, means `A` is a substructure of `B`. -/
 structure IsSubstructure (𝒜: Structure L A) (ℬ: Structure L B): Prop where
-  h₁: ∀ F (a: Fin (arity F) → A), interpFun ℬ F (a ↑·) ∈ A
+  h₁: ∀ F (a: Fin (arity F) → A), interpFun ℬ F (a ·) ∈ A
   h₂: 𝒜 = Substructure A ℬ h₁
 
 @[inherit_doc]
@@ -94,6 +98,8 @@ structure Congruence (𝒜: Structure L A) where
 
 
 namespace Congruence
+variable [Nonempty B]
+
 /-- The congruence `~ₕ`. -/
 def ofStrongHom {𝒜: Structure L A} {ℬ: Structure L B} {h: A → B}
     (hh: StrongHom 𝒜 ℬ h): Congruence 𝒜 where
