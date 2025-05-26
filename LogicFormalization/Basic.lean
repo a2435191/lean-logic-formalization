@@ -17,3 +17,10 @@ import LogicFormalization.Chapter2.Section2.Homework
 import LogicFormalization.Chapter2.Section2.Notation
 
 import LogicFormalization.Chapter2.Section3.Basic
+import LogicFormalization.Chapter2.Section3.Defs
+import LogicFormalization.Chapter2.Section3.Homework
+import LogicFormalization.Chapter2.Section3.Meta
+
+import LogicFormalization.Chapter2.Section4.Homework
+import LogicFormalization.Chapter2.Section4.Term
+import LogicFormalization.Chapter2.Section4.Var
