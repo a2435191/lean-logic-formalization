@@ -10,7 +10,6 @@ inductive Term (L: Language)
 /-- `app F ts` represents the concatenation `Ft₁...tₙ`-/
 | app (F: L.ϝ) (ts: Fin (arity F) → Term L)
 
--- notation L "-term" => Term L
 
 example : Term Language.Ring :=
   .app .mul fun | 0 => .app .add fun
@@ -20,7 +19,10 @@ example : Term Language.Ring :=
                 | 1 => .var z
 
 namespace Term
+
 variable {L: Language}
+
+/-- Predicate for a variable occurring in a term. -/
 def occursIn (v: Var) : Term L → Prop
 | .var v' => v = v'
 | .app _ ts => ∃ i, occursIn v (ts i)
@@ -48,6 +50,12 @@ instance instDecidableOccursIn (v) (t: Term L) :
       have := Fin.find_eq_none_iff.mp h
       .isFalse fun ⟨i, hi⟩ => this i hi
 
+/- N.B.: Here, we use an injective mapping from `Fin m` instead of a `Finset Var` so
+that we can easily talk about the index of a variable (see `idx`),
+which is used in `interp`. -/
+
+/-- `AreVarsFor x t` means that `t = t(x₁, ..., xₘ)`, i.e. the `xᵢ` are
+unique and contain (possibly not strictly) all the variables in `t`. -/
 structure AreVarsFor {m: ℕ} (x: Fin m → Var) (t: Term L) where
   inj': Function.Injective x
   occursIn': ∀ {v}, occursIn v t → v ∈ Set.range x
@@ -56,11 +64,15 @@ namespace AreVarsFor
 
 variable {t: Term L} {m: ℕ}
 
-def ofApp {F} {m} {ts: Fin (arity F) → Term L} {x: Fin m → Var} (hx: AreVarsFor x (app F ts)):
+/-- If all the variables in a function application are in `x`, then
+then the variables in each subterm remain in `x`. -/
+@[simp]
+lemma ofApp {F} {m} {ts: Fin (arity F) → Term L} {x: Fin m → Var} (hx: AreVarsFor x (app F ts)):
     (i: Fin (arity F)) → AreVarsFor x (ts i) :=
   fun _i => ⟨hx.inj', fun h => hx.occursIn' (occursIn_app h)⟩
 
-def idx {t: Term L} {v: Var} {x: Fin m → Var}
+/-- The (unique) `index` of a variable `xᵢ` in a set `x₁, ..., xₘ` is just `i`. -/
+def index {t: Term L} {v: Var} {x: Fin m → Var}
     (hx: AreVarsFor x t) (h: occursIn v t): { i : Fin m // x i = v } :=
   match t with
   | .var _v' =>
@@ -70,29 +82,27 @@ def idx {t: Term L} {v: Var} {x: Fin m → Var}
   | .app _F ts =>
     match hj: Fin.find (fun j => occursIn v (ts j)) with
     | some j =>
-      idx (.ofApp hx j) (Fin.find_eq_some_iff.mp hj).left
+      index (.ofApp hx j) (Fin.find_eq_some_iff.mp hj).left
     | none => False.elim <|
       have := Fin.find_eq_none_iff.mp hj
       this h.choose h.choose_spec
-
--- TODO: delete?
--- @[coe]
--- def toEmbedding {m: ℕ} {x: Fin m → Var} {t: Term L}:
---     AreVarsFor x t → Function.Embedding (Fin m) Var
--- | { inj', .. } => ⟨x, inj'⟩
 
 end AreVarsFor
 
 variable {A: Type u} [Nonempty A]
 
+/-- The interpretation `t^𝒜` of a term `t` with variables `x₁, ..., xₘ`
+(which may not actually appear in `t`) is a function from `A^m` to `A`. -/
 def interp (t: Term L) (𝒜: Structure L A) {m} {x: Fin m → Var} (hx: AreVarsFor x t):
     (Fin m → A) → A :=
   match t with
-  | .var _xᵢ => fun as => as (hx.idx rfl)
+  | .var _xᵢ => fun as => as (hx.index rfl)
   | .app F ts => fun as => (F^𝒜) (fun i =>
     interp (ts i) 𝒜 (.ofApp hx i) as)
 
 open Structure in
+/-- If `𝒜 ⊆ ℬ` are `L`-structures and `t` is an `L`-term with variables `x₁, ..., xₘ`,
+then for all `a ∈ A^m`, `t^𝒜(a) = t^ℬ(a)`. -/
 lemma interp_substructure {B: Type v} {A: Set B} [Nonempty A]
     {𝒜: Structure L A} {ℬ: Structure L B}
     (h: 𝒜 ⊆ ℬ) {t: Term L} {m} {x: Fin m → Var} (hx: AreVarsFor x t):
@@ -106,6 +116,7 @@ lemma interp_substructure {B: Type v} {A: Set B} [Nonempty A]
     apply interp_substructure
     exact substructure_is_substructure
 
+/-- "A term is said to be *variable-free* if no variables occur in it." -/
 def varFree : Term L → Prop
 | .var _ => False
 | .app _ ts => ∀ i, varFree (ts i)
@@ -119,6 +130,7 @@ lemma varFree_of_varFree_app {F} {ts: Fin (arity F) → Term L}
     (h: varFree (.app F ts)): ∀ {i}, varFree (ts i) :=
   @h
 
+@[simp]
 lemma varFree_iff: ∀ {t: Term L}, varFree t ↔ ∀ v, ¬occursIn v t
 | .var _ => by simp [varFree, occursIn]
 | .app F ts => by
@@ -129,9 +141,13 @@ def AreVarsFor.empty {t: Term L} (ht: varFree t): AreVarsFor Fin.elim0 t where
   inj' := Function.injective_of_subsingleton _
   occursIn' := by simp [varFree_iff.mp ht _]
 
+/-- If `t` is variable-free, we can identify its
+interpretation with a single value. -/
 def interpConst (t: Term L) (ht: varFree t) (𝒜: Structure L A): A :=
   interp t 𝒜 (.empty ht) Fin.elim0
 
+/-- The more natural way of expressing `interpConst`.
+See `interpConst_eq_spec`. -/
 def interpConst.spec (t: Term L) (ht: varFree t) (𝒜: Structure L A): A :=
   match t with
   | .var _ => False.elim ht
@@ -148,8 +164,7 @@ lemma interpConst_eq_spec {t: Term L} (ht: varFree t) {𝒜: Structure L A} :
     rfl
 
 /-- `replace t τ x` is `t(τ₁/x₁, ..., τₙ/xₙ)`. Note that `x` must be injective. -/
-def replace (t: Term L) {m} (τ: Fin m → Term L)
-    (x: Fin m ↪ Var): Term L :=
+def replace (t: Term L) {m} (τ: Fin m → Term L) (x: Fin m ↪ Var): Term L :=
   match t with
   | .var v =>
     match Fin.find (fun j => x j = v) with
@@ -159,24 +174,19 @@ def replace (t: Term L) {m} (τ: Fin m → Term L)
 
 /-- Lemma 2.4.1 -/
 theorem replace_varFree {t: Term L} {m} {τ: Fin m → Term L}
-    {x: Fin m → Var} {hx: AreVarsFor x t} (h: ∀ i, varFree (τ i)):
+    {x: Fin m → Var} (hx: AreVarsFor x t) (h: ∀ i, varFree (τ i)):
     varFree (replace t τ ⟨x, hx.inj'⟩) :=
-  -- TODO: clean up lol, ideally both cases to term mode
   match t with
-  | .var v => by
-    unfold replace
-    have := hx.2 rfl
-    simp only [Set.mem_range] at this
-    have := Fin.isSome_find_iff.mpr this
-    have ⟨j, hj⟩ := Option.isSome_iff_exists.mp this
-    simp only [Function.Embedding.coeFn_mk, hj]
-    apply h
-  | .app F ts => by
-    unfold replace varFree
-    intro i
-    dsimp
-    apply replace_varFree
-    · apply AreVarsFor.ofApp hx
-    · assumption
+  | .var v =>
+    match h': Fin.find fun j => x j = v with
+    | none =>
+      have ⟨i, hi⟩ := hx.occursIn' rfl
+      have := Fin.find_eq_none_iff.mp h'
+      absurd hi (this i)
+    | some j => by
+      simp only [replace, Function.Embedding.coeFn_mk, h']
+      apply h
+  | .app F ts =>
+    fun i => replace_varFree (.ofApp hx i) h
 
--- TODO: generators, (maybe) notation
+-- TODO: generators, examples, (maybe) notation
