@@ -91,6 +91,8 @@ end AreVarsFor
 
 variable {A: Type u} [Nonempty A]
 
+open Structure
+
 /-- The interpretation `t^𝒜` of a term `t` with variables `x₁, ..., xₘ`
 (which may not actually appear in `t`) is a function from `A^m` to `A`. -/
 def interp (t: Term L) (𝒜: Structure L A) {m} {x: Fin m → Var} (hx: AreVarsFor x t):

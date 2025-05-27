@@ -29,10 +29,10 @@ variable {L: Language}
 variable {A: Type u} [Nonempty A] {B: Type v}
 
 @[inherit_doc]
-notation:max R "^" 𝒜 => Structure.interpRel 𝒜 R
+scoped notation:max R "^" 𝒜 => Structure.interpRel 𝒜 R
 
 @[inherit_doc]
-notation:max F "^" 𝒜 => Structure.interpFun 𝒜 F
+scoped notation:max F "^" 𝒜 => Structure.interpFun 𝒜 F
 
 /-- We identify the interpretation `h^𝒜` for
 constant symbol `c`, `h: arity c = 0`, with the value in `A`. -/
@@ -40,7 +40,7 @@ def interpConst (𝒜: Structure L A) {c: L.ϝ} (h: arity c = 0) :=
   𝒜.interpFun c fun f => (h ▸ f).elim0
 
 @[inherit_doc]
-notation:max h "^" 𝒜 => Structure.interpConst 𝒜 h
+scoped notation:max h "^" 𝒜 => Structure.interpConst 𝒜 h
 
 section Substructure
 
