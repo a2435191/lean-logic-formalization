@@ -253,7 +253,7 @@ theorem not_exists_nat_rig_term₂ : ¬∃ (t: Term .Rig) (x: Var) (hx: AreVarsF
     ∀ n, interp t 𝒩 hx ![n] = 2^n :=
   fun ⟨t, x, hx, h⟩ =>
     let ⟨p, hp⟩ := Poly.ofTerm t hx
-    have ⟨N, hN⟩ := Poly.eval_diverges_from_two_pow p 17
+    have ⟨N, hN⟩ := Poly.eval_diverges_from_two_pow p 48
     by {
       have := hN N (Nat.le_refl N)
       rw [←h N, hp N] at this
