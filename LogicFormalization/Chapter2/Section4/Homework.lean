@@ -5,7 +5,9 @@ import Mathlib.Tactic.Ring
 
 namespace Homeworks
 
-open Term HasVar
+universe u
+
+open Term
 
 section Problem1
 /-! TODO -/
@@ -32,6 +34,8 @@ def 𝒩 : Structure .Rig ℕ where
   | .one,  _ => 1
   | .add,  a => a 0 + a 1
   | .mul,  a => a 0 * a 1
+
+variable {V: Type u} [DecidableEq V]
 
 section a
 variable (f: ℕ → ℕ)
@@ -76,7 +80,7 @@ lemma isConstant_or_isGe_of_mul:
 
 
 /-- 2.4 #5 (a) -/
-theorem not_exists_nat_rig_term₁ : ¬∃ (t: Term .Rig) (x: Var) (hx: AreVarsFor ![x] t),
+theorem not_exists_nat_rig_term₁ : ¬∃ (t: Term .Rig V) (x: V) (hx: AreVarsFor ![x] t),
     interp t 𝒩 hx ![0] = 1 ∧ interp t 𝒩 hx ![1] = 0 := by
   push_neg
   intro t x hx
@@ -229,7 +233,7 @@ where
         omega
 
 /-- Convert one of the `L`-terms to a `Poly`. -/
-def ofTerm (t: Term .Rig) {x: Var} (hx: AreVarsFor ![x] t):
+def ofTerm (t: Term .Rig V) {x: V} (hx: AreVarsFor ![x] t):
     { p // ∀ n, interp t 𝒩 hx ![n] = eval p n } :=
   match t with
   | .var _ => ⟨.var, fun n => by simp [interp, eval]⟩
@@ -248,7 +252,7 @@ end Poly
 
 
 /-- 2.4 #5 (b) -/
-theorem not_exists_nat_rig_term₂ : ¬∃ (t: Term .Rig) (x: Var) (hx: AreVarsFor ![x] t),
+theorem not_exists_nat_rig_term₂ : ¬∃ (t: Term .Rig V) (x: V) (hx: AreVarsFor ![x] t),
     ∀ n, interp t 𝒩 hx ![n] = 2^n :=
   fun ⟨t, x, hx, h⟩ =>
     let ⟨p, hp⟩ := Poly.ofTerm t hx

@@ -1,39 +1,29 @@
 import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Data.Real.Basic
 
-class HasVar.{u} where
-  Var: Type u
-  [emb: Function.Embedding ℕ Var]
-  [decidable: DecidableEq Var]
+universe u
 
-export HasVar (Var)
+class Var (V: Type u) where
+  var : ℕ ↪ V
 
-variable [HasVar]
+variable {V: Type u} [Var V]
 
-def var (n: ℕ) : Var :=
-  HasVar.emb n
+export Var (var)
 
-lemma var_inj: ∀ {m n}, var m = var n → m = n :=
-  @HasVar.emb.inj'
+lemma var_inj: ∀ {m n: ℕ}, var (V := V) m = var n → m = n :=
+  @var.inj'
 
-instance [HasVar] : DecidableEq Var :=
-  HasVar.decidable
+abbrev v₀: V := var 0
+abbrev v₁: V := var 1
+abbrev v₂: V := var 2
+abbrev v₃: V := var 3
 
-abbrev v₀ := var 0
-abbrev v₁ := var 1
-abbrev v₂ := var 2
-abbrev v₃ := var 3
+abbrev x: V := var 100
+abbrev y: V := var 101
+abbrev z: V := var 102
 
-abbrev x := var 100
-abbrev y := var 101
-abbrev z := var 102
+instance : Var ℝ where
+  var := ⟨(↑), CharZero.cast_injective⟩
 
-namespace HasVar
-
-noncomputable scoped instance (priority := low) instReal : HasVar where
-  Var := ℝ
-  emb := ⟨(↑), CharZero.cast_injective⟩
-
-scoped instance (priority := high) instNat : HasVar where
-  Var := ℕ
-  emb := ⟨id, Function.injective_id⟩
+instance : Var ℕ where
+  var := ⟨id, Function.injective_id⟩
