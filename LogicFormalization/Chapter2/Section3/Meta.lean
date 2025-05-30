@@ -14,9 +14,9 @@ syntax inv  := "⁻¹"
 syntax mul  := "⬝"
 syntax neg  := "-"
 syntax add  := "+"
+
 /-- The syntax for function symbols. Currently
 `0`, `1`, `⁻¹`, `⬝`, `-`, and `+`.-/
-
 syntax langSymbols := lt <|> inv <|> mul <|> neg <|> add <|> num
 
 inductive Symbol
@@ -75,7 +75,6 @@ def interp [MonadQuotation m]: Symbol → m (TSyntax `term)
 
 end Symbol
 
-#check Lean.Parser.Command.definition
 open Lean.Parser.Command in
 def mkEnum {m: Type → Type} [Monad m] [MonadQuotation m] (typeName: Name) (elems: Array Symbol): m (TSyntax `Lean.Parser.Command.inductive) := do
   let emptyOptDeclSig ← `(optDeclSig|)

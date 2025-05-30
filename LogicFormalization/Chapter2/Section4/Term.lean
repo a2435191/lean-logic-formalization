@@ -116,7 +116,7 @@ lemma interp_substructure {B: Type v} {A: Set B} [Nonempty A]
     congr 1
     funext i
     apply interp_substructure
-    exact substructure_is_substructure
+    exact substructure_isSubstructure
 
 /-- "A term is said to be *variable-free* if no variables occur in it." -/
 def varFree : Term L → Prop

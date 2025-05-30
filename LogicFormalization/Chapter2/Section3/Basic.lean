@@ -8,15 +8,15 @@ namespace Structure
 
 -- TODO: more examples beyond those in Meta. See pp. 25-26
 
-variable {L: Language} {B: Type v} [Nonempty B]
+variable {L: Language} {B: Type v} {A: Set B} [Nonempty A] {ℬ: Structure L B}
 
-lemma substructure_is_substructure {A: Set B} [Nonempty A] {ℬ: Structure L B}
-    {h: ∀ F (a: Fin (arity F) → A), interpFun ℬ F (a ·) ∈ A}: Substructure A ℬ h ⊆ ℬ :=
+lemma substructure_isSubstructure {h: ∀ F (a: Fin (arity F) → A), interpFun ℬ F (a ·) ∈ A}:
+    Substructure A ℬ h ⊆ ℬ :=
   ⟨h, rfl⟩
 
 section Hom
 
-variable {A: Type u} [Nonempty A]
+variable {A: Type u} [Nonempty A] [Nonempty B]
 variable (𝒜: Structure L A) (ℬ: Structure L B) (h: A → B)
 
 lemma StrongHom.mk' (hom: Hom 𝒜 ℬ h) (hh: ∀ R a, h ∘ a ∈ ℬ.interpRel R → a ∈ 𝒜.interpRel R):
