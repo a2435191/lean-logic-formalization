@@ -108,7 +108,7 @@ end a
 
 section b
 
-/-- Represents polynomials with coefficients from `ℕ`.-/
+/-- Represents polynomials with coefficients from `ℕ`. -/
 inductive Poly
 | const: ℕ → Poly
 | var
@@ -127,8 +127,7 @@ lemma eval_mono: ∀ {p: Poly}, Monotone p.eval
 | .const _ => fun _ _ _ => Nat.le_refl _
 | .var => fun _ _ => id
 | .add _ _ => Monotone.add eval_mono eval_mono
-| .mul _
- _ => Monotone.mul' eval_mono eval_mono
+| .mul _ _ => Monotone.mul' eval_mono eval_mono
 
 /-- Degree of a polynomial -/
 def deg: Poly → ℕ
@@ -263,9 +262,17 @@ theorem not_exists_nat_rig_term₂ : ¬∃ (t: Term .Rig) (x: Var) (hx: AreVarsF
 end b
 
 open Structure in
-/-- 2.4 #5 (c). The only substructure of `𝒩` is `𝒩` itself. -/
-theorem 𝒩.substructures: ∀ {M: Set ℕ} [Nonempty M] {ℳ: Structure .Rig M},
-    ℳ ⊆ 𝒩 ↔ HEq ℳ 𝒩 :=
-  sorry
 
+/-- 2.4 #5 (c). The only substructure of `𝒩` is `𝒩` itself. -/
+theorem 𝒩.substructures {M: Set ℕ} [Nonempty M] {ℳ: Structure .Rig M}:
+    (Structure.IsSubstructure ℳ 𝒩) → M = Set.univ
+| ⟨h₁, _⟩ => Set.eq_univ_of_forall (all_mem_M h₁)
+where all_mem_M
+    (h: ∀ (F : Language.Rig.ϝ) (a : Fin (arity F) → ↑M), (𝒩.interpFun F fun x => ↑(a x)) ∈ M):
+    (n: ℕ) → n ∈ M
+  | 0 => h .zero ![]
+  | k + 1 =>
+    h .add ![⟨k, all_mem_M h k⟩, ⟨1, h .one ![]⟩]
+
+-- TODO: maybe show other way too? Should be trivial though
 end Problem5
