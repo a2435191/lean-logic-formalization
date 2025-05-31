@@ -80,11 +80,11 @@ lemma isConstant_or_isGe_of_mul:
 
 
 /-- 2.4 #5 (a) -/
-theorem not_exists_nat_rig_term₁ : ¬∃ (t: Term .Rig V) (x: V) (hx: AreVarsFor ![x] t),
-    interp t 𝒩 hx ![0] = 1 ∧ interp t 𝒩 hx ![1] = 0 := by
+theorem not_exists_nat_rig_term₁ : ¬∃ (t: Term .Rig V) (x: V) (hx: areVarsFor {x} t),
+    interp t 𝒩 hx (fun _ => 0) = 1 ∧ interp t 𝒩 hx (fun _ => 1) = 0 := by
   push_neg
   intro t x hx
-  let f n := interp t 𝒩 hx ![n]
+  let f n := interp t 𝒩 hx (fun _ => n)
   -- either f := t^𝒩 is constant or f(n) ≥ n for all n.
   suffices isConstantOrGe f by
     match this with
@@ -105,8 +105,15 @@ theorem not_exists_nat_rig_term₁ : ¬∃ (t: Term .Rig V) (x: V) (hx: AreVarsF
     cases hF : F <;> subst hF
     · exact .inl ⟨0, fun n => rfl⟩
     · exact .inl ⟨1, fun n => rfl⟩
-    · apply isConstant_or_isGe_of_add <;> apply ih
-    · apply isConstant_or_isGe_of_mul <;> apply ih
+    all_goals
+      first
+      | apply isConstant_or_isGe_of_add
+      | apply isConstant_or_isGe_of_mul
+      all_goals
+        apply ih
+        intro v hv
+        apply hx
+        exact ⟨_, hv⟩
 end a
 
 
@@ -233,27 +240,27 @@ where
         omega
 
 /-- Convert one of the `L`-terms to a `Poly`. -/
-def ofTerm (t: Term .Rig V) {x: V} (hx: AreVarsFor ![x] t):
-    { p // ∀ n, interp t 𝒩 hx ![n] = eval p n } :=
+def ofTerm (t: Term .Rig V) {x: V} (hx: areVarsFor {x} t):
+    { p // ∀ n, interp t 𝒩 hx (fun _ => n) = eval p n } :=
   match t with
   | .var _ => ⟨.var, fun n => by simp [interp, eval]⟩
   | .app .zero _ => ⟨.const 0, fun n => rfl⟩
   | .app .one _ => ⟨.const 1, fun n => rfl⟩
   | .app .add ts =>
-    let ⟨a, ha⟩ := ofTerm (ts 0) (.ofApp hx 0)
-    let ⟨b, hb⟩ := ofTerm (ts 1) (.ofApp hx 1)
+    let ⟨a, ha⟩ := ofTerm (ts 0) (areVarsFor_ofApp hx 0)
+    let ⟨b, hb⟩ := ofTerm (ts 1) (areVarsFor_ofApp hx 1)
     ⟨.add a b, fun n => by simp only [eval, ←ha, ←hb]; rfl⟩
   | .app .mul ts =>
-    let ⟨a, ha⟩ := ofTerm (ts 0) (.ofApp hx 0)
-    let ⟨b, hb⟩ := ofTerm (ts 1) (.ofApp hx 1)
+    let ⟨a, ha⟩ := ofTerm (ts 0) (areVarsFor_ofApp hx 0)
+    let ⟨b, hb⟩ := ofTerm (ts 1) (areVarsFor_ofApp hx 1)
     ⟨.mul a b, fun n => by simp only [eval, ←ha, ←hb]; rfl⟩
 
 end Poly
 
 
 /-- 2.4 #5 (b) -/
-theorem not_exists_nat_rig_term₂ : ¬∃ (t: Term .Rig V) (x: V) (hx: AreVarsFor ![x] t),
-    ∀ n, interp t 𝒩 hx ![n] = 2^n :=
+theorem not_exists_nat_rig_term₂ : ¬∃ (t: Term .Rig V) (x: V) (hx: areVarsFor {x} t),
+    ∀ n, interp t 𝒩 hx (fun _ => n) = 2^n :=
   fun ⟨t, x, hx, h⟩ =>
     let ⟨p, hp⟩ := Poly.ofTerm t hx
     have ⟨N, hN⟩ := Poly.eval_diverges_from_two_pow p 48

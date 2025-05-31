@@ -50,44 +50,21 @@ instance instDecidableOccursIn [DecidableEq V] (v: V) (t: Term L V) :
       have := Fin.find_eq_none_iff.mp h
       .isFalse fun ⟨i, hi⟩ => this i hi
 
-/- N.B.: Here, we use an injective mapping from `Fin m` instead of a `Finset V` so
-that we can easily talk about the index of a variable (see `idx`),
-which is used in `interp`. -/
 
-/-- `AreVarsFor x t` means that `t = t(x₁, ..., xₘ)`, i.e. the `xᵢ` are
-unique and contain (possibly not strictly) all the variables in `t`. -/
-structure AreVarsFor {m: ℕ} (x: Fin m → V) (t: Term L V) where
-  inj': Function.Injective x
-  occursIn': ∀ {v}, occursIn v t → v ∈ Set.range x
+/-- `areVarsFor x t` means that `t = t(x₁, ..., xₘ)`, i.e. the `xᵢ` contain
+(possibly not strictly) all the variables in `t`. -/
+@[reducible]
+def areVarsFor (x: Set V) (t: Term L V) :=
+  ∀ {v}, occursIn v t → v ∈ x
 
-namespace AreVarsFor
-
-variable {t: Term L} {m: ℕ}
 
 /-- If all the variables in a function application are in `x`, then
 then the variables in each subterm remain in `x`. -/
 @[simp]
-lemma ofApp {F} {m} {ts: Fin (arity F) → Term L V} {x: Fin m → V} (hx: AreVarsFor x (app F ts)):
-    (i: Fin (arity F)) → AreVarsFor x (ts i) :=
-  fun _i => ⟨hx.inj', fun h => hx.occursIn' (occursIn_app h)⟩
+lemma areVarsFor_ofApp {F} {ts: Fin (arity F) → Term L V} {x: Set V} (hx: areVarsFor x (app F ts)):
+    (i: Fin (arity F)) → areVarsFor x (ts i) :=
+  fun _i {_v} hv => hx (occursIn_app hv)
 
-/-- The (unique) `index` of a variable `xᵢ` in a set `x₁, ..., xₘ` is just `i`. -/
-def index [DecidableEq V] {t: Term L V} {v: V} {x: Fin m → V}
-    (hx: AreVarsFor x t) (h: occursIn v t): { i : Fin m // x i = v } :=
-  match t with
-  | .var _v' =>
-    have hi := Fin.isSome_find_iff.mpr (hx.occursIn' h)
-    let i := (Fin.find (fun i => x i = v)).get hi
-    ⟨i, Fin.find_spec _ (Option.get_mem hi)⟩
-  | .app _F ts =>
-    match hj: Fin.find (fun j => occursIn v (ts j)) with
-    | some j =>
-      index (.ofApp hx j) (Fin.find_eq_some_iff.mp hj).left
-    | none => False.elim <|
-      have := Fin.find_eq_none_iff.mp hj
-      this h.choose h.choose_spec
-
-end AreVarsFor
 
 universe v
 variable {A: Type v} [Nonempty A]
@@ -95,21 +72,22 @@ variable {A: Type v} [Nonempty A]
 open Structure
 
 /-- The interpretation `t^𝒜` of a term `t` with variables `x₁, ..., xₘ`
-(which may not actually appear in `t`) is a function from `A^m` to `A`. -/
-def interp [DecidableEq V] (t: Term L V) (𝒜: Structure L A) {m} {x: Fin m → V} (hx: AreVarsFor x t):
-    (Fin m → A) → A :=
+(which may not actually appear in `t`) is a function from `A^m` to `A`. We don't
+care about the ordering of `x₁, ..., xₘ`, so `A^m` is just a mapping from the set of variables,
+`x`, to `A`. -/
+def interp [DecidableEq V] (t: Term L V) (𝒜: Structure L A) {x: Set V} (hx: areVarsFor x t):
+    (x → A) → A :=
   match t with
-  | .var _xᵢ => fun as => as (hx.index rfl)
-  | .app F ts => fun as => (F^𝒜) (fun i =>
-    interp (ts i) 𝒜 (.ofApp hx i) as)
+  | .var v => fun as => as ⟨v, hx rfl⟩
+  | .app F ts => fun as => (F^𝒜) fun i => interp (ts i) 𝒜 (areVarsFor_ofApp hx i) as
 
 open Structure in
 /-- If `𝒜 ⊆ ℬ` are `L`-structures and `t` is an `L`-term with variables `x₁, ..., xₘ`,
 then for all `a ∈ A^m`, `t^𝒜(a) = t^ℬ(a)`. -/
 lemma interp_substructure [DecidableEq V] {B: Type v} {A: Set B} [Nonempty A]
     {𝒜: Structure L A} {ℬ: Structure L B}
-    (h: 𝒜 ⊆ ℬ) {t: Term L V} {m} {x: Fin m → V} (hx: AreVarsFor x t):
-    ∀ (a: Fin m → A), interp t 𝒜 hx a = interp t ℬ hx (a ·) :=
+    (h: 𝒜 ⊆ ℬ) {t: Term L V} {x: Set V} (hx: areVarsFor x t):
+    ∀ (a: x → A), interp t 𝒜 hx a = interp t ℬ hx (a ·) :=
   match t with
   | .var v => fun a => rfl
   | .app F ts => fun a => by
@@ -117,7 +95,9 @@ lemma interp_substructure [DecidableEq V] {B: Type v} {A: Set B} [Nonempty A]
     congr 1
     funext i
     apply interp_substructure
-    exact substructure_isSubstructure
+    · exact substructure_isSubstructure
+    · apply areVarsFor_ofApp
+      exact hx
 
 /-- "A term is said to be *variable-free* if no variables occur in it." -/
 def varFree : Term L V → Prop
@@ -140,14 +120,13 @@ lemma varFree_iff: ∀ {t: Term L V}, varFree t ↔ ∀ v, ¬occursIn v t
   simp only [varFree, occursIn, not_exists, varFree_iff]
   apply forall_comm
 
-def AreVarsFor.empty {t: Term L V} (ht: varFree t): AreVarsFor Fin.elim0 t where
-  inj' := Function.injective_of_subsingleton _
-  occursIn' := by simp [varFree_iff.mp ht _]
+lemma areVarsFor_empty {t: Term L V} (ht: varFree t): areVarsFor ∅ t :=
+  fun hv => absurd hv (varFree_iff.mp ht _)
 
 /-- If `t` is variable-free, we can identify its
 interpretation with a single value. -/
 def interpConst [DecidableEq V] (t: Term L V) (ht: varFree t) (𝒜: Structure L A): A :=
-  interp t 𝒜 (.empty ht) Fin.elim0
+  interp t 𝒜 (areVarsFor_empty ht) (fun x => False.elim x.property)
 
 /-- The more natural way of expressing `interpConst`.
 See `interpConst_eq_spec`. -/
@@ -166,30 +145,28 @@ lemma interpConst_eq_spec [DecidableEq V] {t: Term L V} (ht: varFree t) {𝒜: S
     simp only [←interpConst_eq_spec]
     rfl
 
-/-- `replace t τ x` is `t(τ₁/x₁, ..., τₙ/xₙ)`. Note that `x` must be injective. -/
-def replace [DecidableEq V] (t: Term L V) {m} (τ: Fin m → Term L V) (x: Fin m ↪ V): Term L V :=
+/-- `replace t τ x` is `t(τ₁/x₁, ..., τₙ/xₙ)`. -/
+def replace [DecidableEq V] (t: Term L V) (x: Set V) [DecidablePred (· ∈ x)] (τ: x → Term L V): Term L V :=
   match t with
   | .var v =>
-    match Fin.find (fun j => x j = v) with
-    | none => .var v
-    | some j => τ j
-  | .app F ts => .app F (fun i => replace (ts i) τ x)
+    if hv: v ∈ x then
+      τ ⟨v, hv⟩
+    else
+      .var v
+  | .app F ts => .app F (fun i => replace (ts i) x τ)
 
 /-- Lemma 2.4.1 -/
-theorem replace_varFree [DecidableEq V] {t: Term L V} {m} {τ: Fin m → Term L V}
-    {x: Fin m → V} (hx: AreVarsFor x t) (h: ∀ i, varFree (τ i)):
-    varFree (replace t τ ⟨x, hx.inj'⟩) :=
+theorem replace_varFree [DecidableEq V] {t: Term L V} {x: Set V} [DecidablePred (· ∈ x)]
+    {τ: x → Term L V} (hx: areVarsFor x t) (h: ∀ v, varFree (τ v)):
+    varFree (t.replace x τ) :=
   match t with
-  | .var v =>
-    match h': Fin.find fun j => x j = v with
-    | none =>
-      have ⟨i, hi⟩ := hx.occursIn' rfl
-      have := Fin.find_eq_none_iff.mp h'
-      absurd hi (this i)
-    | some j => by
-      simp only [replace, Function.Embedding.coeFn_mk, h']
-      apply h
+  | .var v => by
+    unfold replace
+    split_ifs with hv
+    · apply h
+    · have := hx rfl
+      contradiction
   | .app F ts =>
-    fun i => replace_varFree (.ofApp hx i) h
+    fun i => replace_varFree (areVarsFor_ofApp hx i) h
 
 -- TODO: generators, examples, (maybe) notation
